@@ -1,0 +1,40 @@
+---
+alwaysApply: true
+---
+
+The convention hirarchy:
+
+- Controller: The input layer
+- Provider: Orchestration layer of services, used by controllers.
+- Facade: Orchestration layer of multiple services for complex situations for specific context
+- Service: Business logic of some specific domain context
+- Repository: An injectable class that handles business logic related to operations on specific Entity (Every Entity has a Repository)
+
+
+Additionally you have:
+
+- Transformer: A static class with static transformation functions, usually everything in the class is related to the same domain
+- Helper: An injectable class that is in charge of providing some helper functionality (ability to use services) in some specific domain context.
+
+
+Rules:
+- Services cannot use services or providers or facades, you need to do that orchestration in Provider or Facade depending on the situation. Services can only use repositories, helpers, transformers, etc
+- Providers cannot use providers or repositories, they can only use services and facades
+- Helpers cannot use repositories directly
+- Transformers cannot be injectable
+- Controller cannot use anything other than provider directly.
+- Repository can never use anything other than helper or transformer and its own scope of typeorm (Entity, etc)
+
+Types:
+
+- request DTO (<name>-request.dto.ts): This is the INPUT DTO received from the client, the controller receives and uses class transformer and validator.
+- response DTO (<name>-response.dto.ts): This is the OUTPUT DTO to the request that wil be sent to the client.
+
+Rules for types:
+- You must always use transformation to response DTO from any object when sending response to the controller  (in the provider level)
+- If you have other objects that transform from request DTO, use transformer dtoToX and vice-versa
+
+Important rules for imports:
+- Always update imports if changed and use the right paths
+- Never create index.ts files for exports because we are in NestJS environment
+- Never create readmes unless asked

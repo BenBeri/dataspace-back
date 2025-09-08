@@ -1,0 +1,1182 @@
+{
+  "info": {
+    "name": "Dataspace API",
+    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, Repositories and Data Sources management. Now featuring CASL-based permission system with workspace owner privileges, admin member roles, and private repository support. Updated with enhanced security and fine-grained access control.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "dataspace-api-collection",
+    "version": "4.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "roleId",
+      "value": "",
+      "type": "string",
+      "description": "UUID of a role for testing role endpoints"
+    },
+    {
+      "key": "workspaceId",
+      "value": "",
+      "type": "string",
+      "description": "UUID of a workspace for testing workspace-related endpoints"
+    },
+    {
+      "key": "repositoryId",
+      "value": "",
+      "type": "string",
+      "description": "UUID of a repository for testing repository endpoints"
+    },
+    {
+      "key": "dataSourceId",
+      "value": "",
+      "type": "string",
+      "description": "UUID of a data source for testing data source endpoints"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Extract and save the auth token from response",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.accessToken) {",
+                  "        pm.collectionVariables.set('authToken', response.accessToken);",
+                  "        console.log('Auth token saved:', response.accessToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User (Register)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"password\": \"password123\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?offset=0&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of records to skip (default: 0)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of users to return (default: 10, max: 100)"
+                },
+                {
+                  "key": "email",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by exact email match"
+                },
+                {
+                  "key": "firstName",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by first name (partial match)"
+                },
+                {
+                  "key": "lastName",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by last name (partial match)"
+                },
+                {
+                  "key": "isActive",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by active status (true/false)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Search across email, firstName, and lastName"
+                },
+                {
+                  "key": "createdAfter",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter users created after this date (ISO format)"
+                },
+                {
+                  "key": "createdBefore",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter users created before this date (ISO format)"
+                },
+                {
+                  "key": "updatedAfter",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter users updated after this date (ISO format)"
+                },
+                {
+                  "key": "updatedBefore",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter users updated before this date (ISO format)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users - With Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?offset=0&limit=5&isActive=true&search=john",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true"
+                },
+                {
+                  "key": "search",
+                  "value": "john"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check User Exists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1/exists",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1", "exists"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Workspaces",
+      "item": [
+        {
+          "name": "Create Workspace (With custom key)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Extract and save the workspace ID from response",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('workspaceId', response.id);",
+                  "        console.log('Workspace ID saved:', response.id);",
+                  "        console.log('Custom name_key used:', response.name_key);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Development Workspace\",\n  \"name_key\": \"my-dev-workspace\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces"]
+            },
+            "description": "Creates a workspace with a custom name_key provided. The name_key must contain only lowercase letters, numbers, and single dashes (max 32 characters)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Workspace (Auto-generated key)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Extract and save the workspace ID from response",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('workspaceId', response.id);",
+                  "        console.log('Workspace ID saved:', response.id);",
+                  "        console.log('Auto-generated name_key:', response.name_key);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"API Gateway Project v2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces"]
+            },
+            "description": "Creates a workspace without providing name_key - the system will auto-generate it from the name (e.g., 'API Gateway Project v2' -> 'api-gateway-project-v2')"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Workspace (Duplicate key - Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate Test\",\n  \"name_key\": \"my-dev-workspace\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces"]
+            },
+            "description": "Tests unique constraint validation - should return 400 error with validation-formatted message when trying to use an existing name_key. Run this after creating the first workspace to see the error response."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Workspaces by Owner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces?ownerId=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces"],
+              "query": [
+                {
+                  "key": "ownerId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Workspace by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Workspace",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Workspace Name\",\n  \"name_key\": \"updated-workspace\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "1"]
+            },
+            "description": "Updates workspace properties. Both name and name_key are optional. If only name is provided, name_key remains unchanged."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Workspace",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User Workspaces",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/my-workspaces",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "my-workspaces"]
+            },
+            "description": "Gets simplified workspace information for the current authenticated user. Returns: workspaceId, nameKey, ownerUserId, role (name and permissions), createdAt, updatedAt."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/my-workspaces",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["workspaces", "my-workspaces"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "[\n  {\n    \"workspaceId\": \"uuid\",\n    \"nameKey\": \"my-workspace\",\n    \"ownerUserId\": \"uuid\",\n    \"isAdmin\": true,\n    \"role\": {\n      \"name\": \"admin\",\n      \"permissions\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": true,\n        \"users\": {\n          \"read\": true,\n          \"write\": true,\n          \"delete\": true\n        },\n        \"repository\": {\n          \"read\": true,\n          \"write\": true,\n          \"delete\": true,\n          \"privateRepositories\": []\n        }\n      }\n    },\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00Z\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Workspace Members",
+      "item": [
+        {
+          "name": "Add Member to Workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 2,\n  \"roleName\": \"Admin\",\n  \"isAdmin\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/1/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "1", "members"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Workspace Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/1/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "1", "members"]
+            },
+            "description": "Gets workspace members. Response now includes full workspace details (including name_key) when workspace relations are loaded."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Member Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleName\": \"Viewer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/1/members/2/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "1", "members", "2", "role"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Member from Workspace",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/1/members/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "1", "members", "2"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Workspace Memberships",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/users/1/memberships",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "users", "1", "memberships"]
+            },
+            "description": "Gets all workspace memberships for a user. Response includes full workspace details (including name_key) for each membership when workspace relations are loaded."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"admin\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": true,\n    \"delete\": true,\n    \"users\": {\n      \"read\": true,\n      \"write\": true,\n      \"delete\": true\n    },\n    \"repository\": {\n      \"read\": true,\n      \"write\": true,\n      \"delete\": true,\n      \"privateRepositories\": []\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Member Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"member\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": false,\n    \"delete\": false,\n    \"users\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false\n    },\n    \"repository\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false,\n      \"privateRepositories\": []\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles", "{{roleId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"updated-admin\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": true,\n    \"delete\": false,\n    \"users\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false\n    },\n    \"repository\": {\n      \"read\": true,\n      \"write\": true,\n      \"delete\": false,\n      \"privateRepositories\": [\n        {\n          \"repositoryKey\": \"secret-repo\",\n          \"permissions\": {\n            \"read\": true,\n            \"write\": true,\n            \"delete\": false\n          }\n        }\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles", "{{roleId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles", "{{roleId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Repositories",
+      "description": "CRUD operations for repositories with workspace-based permissions. Repository creation automatically creates an associated data source. Data sources can be managed separately after creation.",
+      "item": [
+        {
+          "name": "Create Repository with Data Source (Custom key)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Extract and save the repository ID and data source ID from response",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('repositoryId', response.id);",
+                  "        console.log('Repository ID saved:', response.id);",
+                  "        console.log('Custom repositoryNameKey used:', response.repositoryNameKey);",
+                  "        if (response.dataSource && response.dataSource.id) {",
+                  "            pm.collectionVariables.set('dataSourceId', response.dataSource.id);",
+                  "            console.log('Data Source ID saved:', response.dataSource.id);",
+                  "        }",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Repository\",\n  \"repositoryNameKey\": \"my-repo\",\n  \"description\": \"A sample repository for testing\",\n  \"isPrivate\": false,\n  \"dataSource\": {\n    \"dataSourceName\": \"PostgreSQL Database\",\n    \"dataSourceType\": \"postgres\",\n    \"configuration\": {\n      \"host\": \"localhost\",\n      \"port\": 5432,\n      \"database\": \"my_database\",\n      \"username\": \"postgres\",\n      \"password\": \"password\",\n      \"ssl\": false\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories"]
+            },
+            "description": "Creates a new repository with associated data source. Both repository and data source are created atomically. The repositoryNameKey must contain only lowercase letters, numbers, and single dashes (max 32 characters). Set isPrivate to true for private repositories. Requires CASL 'create' ability on Repository subject. Workspace owners and admin members have automatic access."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Repository with Data Source (Auto-generated key)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Extract and save the repository ID and data source ID from response",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('repositoryId', response.id);",
+                  "        console.log('Repository ID saved:', response.id);",
+                  "        console.log('Auto-generated repositoryNameKey:', response.repositoryNameKey);",
+                  "        if (response.dataSource && response.dataSource.id) {",
+                  "            pm.collectionVariables.set('dataSourceId', response.dataSource.id);",
+                  "            console.log('Data Source ID saved:', response.dataSource.id);",
+                  "        }",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"API Gateway Service v2\",\n  \"description\": \"Advanced API gateway for microservices\",\n  \"isPrivate\": false,\n  \"dataSource\": {\n    \"dataSourceName\": \"Gateway Database\",\n    \"dataSourceType\": \"postgres\",\n    \"configuration\": {\n      \"host\": \"db.example.com\",\n      \"port\": 5432,\n      \"database\": \"gateway_db\",\n      \"username\": \"gateway_user\",\n      \"password\": \"secure_password\",\n      \"ssl\": true,\n      \"connectionLimit\": 10\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories"]
+            },
+            "description": "Creates a repository with data source without providing repositoryNameKey - the system will auto-generate it from the name (e.g., 'API Gateway Service v2' -> 'api-gateway-service-v2'). Requires CASL 'create' ability on Repository subject. Workspace owners and admin members have automatic access."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Repository (Duplicate key - Error Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate Repo Test\",\n  \"repositoryNameKey\": \"my-repo\",\n  \"description\": \"This should fail with unique constraint error\",\n  \"dataSource\": {\n    \"dataSourceName\": \"Test Database\",\n    \"dataSourceType\": \"postgres\",\n    \"configuration\": {\n      \"host\": \"localhost\",\n      \"port\": 5432,\n      \"database\": \"test_db\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories"]
+            },
+            "description": "Tests unique constraint validation - should return 400 error with validation-formatted message when trying to use an existing repositoryNameKey. Run this after creating the first repository to see the error response."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Repositories by Workspace",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of repositories to return (default: 10, max: 100)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of records to skip (default: 0)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Search across repository name and description using SQL LIKE"
+                }
+              ]
+            },
+            "description": "Gets paginated list of repositories in a specific workspace with optional search. Response includes both public and private repositories based on user permissions. Private repositories are only shown if user has explicit access or is workspace owner/admin. Uses CASL 'read' ability on Workspace subject."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Repositories by Workspace with Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories?limit=5&offset=0&search=sample",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "search",
+                  "value": "sample"
+                }
+              ]
+            },
+            "description": "Example of searching repositories by name or description with pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Repository by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
+            },
+            "description": "Gets a specific repository by ID. For private repositories, requires explicit permission or workspace owner/admin access. Response includes full workspace and data source details. Uses CASL 'read' ability on Repository subject with automatic private repository permission validation."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Repository",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Repository Name\",\n  \"repositoryNameKey\": \"updated-repo\",\n  \"description\": \"Updated description for the repository\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
+            },
+            "description": "Updates an existing repository. All fields (name, repositoryNameKey, description, isPrivate) are optional. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'update' ability on Repository subject."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Repository",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
+            },
+            "description": "Deletes a repository and its associated data source. The operation is cascaded - deleting the repository also removes the data source and its change history. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'delete' ability on Repository subject."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Data Sources",
+      "description": "Data source management endpoints. Data sources are created automatically with repositories and can be modified separately.",
+      "item": [
+        {
+          "name": "Get Data Source by Repository",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-source",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-source"]
+            },
+            "description": "Gets the data source associated with a repository. Each repository has exactly one data source. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'read' ability on Repository subject."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Data Source",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Database Name\",\n  \"type\": \"postgres\",\n  \"configuration\": {\n    \"host\": \"updated.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"updated_database\",\n    \"username\": \"new_user\",\n    \"password\": \"new_password\",\n    \"ssl\": true,\n    \"connectionLimit\": 20\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-source/{{dataSourceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-source", "{{dataSourceId}}"]
+            },
+            "description": "Updates an existing data source. All fields (name, type, configuration) are optional. Changes are tracked in the change history with user attribution. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'update' ability on Repository subject."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Data Source",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-source/{{dataSourceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-source", "{{dataSourceId}}"]
+            },
+            "description": "Deletes a data source and all its associated change history. This operation removes the OneToOne relationship with the repository. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'delete' ability on Repository subject."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Data Source Change History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-source/{{dataSourceId}}/history?offset=0&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-source", "{{dataSourceId}}", "history"],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of records to skip (default: 0)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of history records to return (default: 10, max: 100)"
+                }
+              ]
+            },
+            "description": "Gets paginated change history for a data source. Shows all modifications made to the data source including name, type, and configuration changes with user attribution and timestamps. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'read' ability on Repository subject."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Management",
+      "description": "Endpoints for managing workspace admin privileges. Workspace owners and admin members can promote/demote members.",
+      "item": [
+        {
+          "name": "Promote Member to Admin",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isAdmin\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId}}/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "members", "{{userId}}", "admin"]
+            },
+            "description": "Promotes a workspace member to admin. Admin members have full access to all workspace operations, bypassing role-based permissions. Only workspace owners and existing admin members can promote others."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Admin Privileges",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isAdmin\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId}}/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "members", "{{userId}}", "admin"]
+            },
+            "description": "Revokes admin privileges from a workspace member. The member will fall back to role-based permissions. Only workspace owners and admin members can revoke admin privileges."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Role with Private Repository Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"secret-project-developer\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": false,\n    \"delete\": false,\n    \"users\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false\n    },\n    \"repository\": {\n      \"read\": true,\n      \"write\": true,\n      \"delete\": false,\n      \"privateRepositories\": [\n        {\n          \"repositoryKey\": \"secret-project\",\n          \"permissions\": {\n            \"read\": true,\n            \"write\": true,\n            \"delete\": false\n          }\n        },\n        {\n          \"repositoryKey\": \"confidential-data\",\n          \"permissions\": {\n            \"read\": true,\n            \"write\": false,\n            \"delete\": false\n          }\n        }\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles"]
+            },
+            "description": "Creates a role with access to specific private repositories. The privateRepositories array grants granular permissions to repositories by their repositoryNameKey. This role can access both 'secret-project' and 'confidential-data' private repositories with different permission levels."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log current auth token",
+          "console.log('Current auth token:', pm.collectionVariables.get('authToken'));"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Check for authentication errors",
+          "if (pm.response.code === 401) {",
+          "    console.log('Authentication required - please login first');",
+          "}"
+        ]
+      }
+    }
+  ]
+}
