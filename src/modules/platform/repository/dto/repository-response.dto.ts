@@ -8,7 +8,7 @@ export class RepositoryResponseDto {
   description: string;
   workspaceId: string;
   workspace?: WorkspaceResponseDto;
-  dataSource?: DataSourceResponseDto;
+  dataSources?: DataSourceResponseDto[];
   createdAt: Date;
   updatedAt: Date;
 }

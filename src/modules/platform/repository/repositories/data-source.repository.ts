@@ -30,6 +30,14 @@ export class DataSourceRepository {
     });
   }
 
+  async findAllByRepositoryId(repositoryId: string): Promise<DataSource[]> {
+    return await this.repository.find({
+      where: { repositoryId },
+      relations: ['changeHistory'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
   async updateWithData(id: string, updateData: Partial<DataSource>): Promise<void> {
     await this.repository.update(id, updateData);
   }
@@ -54,5 +62,12 @@ export class DataSourceRepository {
       where: { repositoryId },
     });
     return count > 0;
+  }
+
+  async findByIdAndRepositoryId(id: string, repositoryId: string): Promise<DataSource | null> {
+    return await this.repository.findOne({
+      where: { id, repositoryId },
+      relations: ['changeHistory'],
+    });
   }
 }

@@ -54,12 +54,6 @@ export class DataSourceService {
     userId: string,
     workspaceId: string,
   ): Promise<DataSource> {
-    // Check if data source already exists for this repository
-    const existingDataSource = await this.dataSourceRepository.findByRepositoryId(repositoryId);
-    if (existingDataSource) {
-      throw new BadRequestException('Data source already exists for this repository');
-    }
-
     const encryptedConfiguration = await this.encryptConfiguration(workspaceId, configuration);
 
     const dataSourceData = {
@@ -96,6 +90,30 @@ export class DataSourceService {
 
   async getDataSourceByRepositoryId(repositoryId: string): Promise<DataSource | null> {
     return await this.dataSourceRepository.findByRepositoryId(repositoryId);
+  }
+
+  async getDataSourcesByRepositoryId(repositoryId: string): Promise<DataSource[]> {
+    return await this.dataSourceRepository.findAllByRepositoryId(repositoryId);
+  }
+
+  async getDataSourceByIdAndRepositoryId(id: string, repositoryId: string): Promise<DataSource> {
+    const dataSource = await this.dataSourceRepository.findByIdAndRepositoryId(id, repositoryId);
+    
+    if (!dataSource) {
+      throw new NotFoundException(`Data source with ID ${id} not found for repository ${repositoryId}`);
+    }
+    
+    return dataSource;
+  }
+
+  async getDecryptedConfigurationById(dataSourceId: string): Promise<Record<string, any> | null> {
+    const dataSource = await this.dataSourceRepository.findById(dataSourceId);
+    
+    if (!dataSource) {
+      return null;
+    }
+
+    return await this.decryptConfiguration(dataSource.encryptedConfiguration);
   }
 
   async updateDataSource(
@@ -180,9 +198,9 @@ export class DataSourceService {
   }
 
   async deleteDataSourceByRepositoryId(repositoryId: string, userId: string): Promise<void> {
-    const dataSource = await this.dataSourceRepository.findByRepositoryId(repositoryId);
+    const dataSources = await this.dataSourceRepository.findAllByRepositoryId(repositoryId);
     
-    if (dataSource) {
+    for (const dataSource of dataSources) {
       await this.deleteDataSource(dataSource.id, userId);
     }
   }

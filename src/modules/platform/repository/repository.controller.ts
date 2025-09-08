@@ -16,6 +16,7 @@ import { RepositoryProvider } from './providers/repository.provider';
 import { CreateRepositoryRequestDto } from './dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from './dto/update-repository-request.dto';
 import { UpdateDataSourceRequestDto } from './dto/update-data-source-request.dto';
+import { CreateDataSourceRequestDto } from './dto/create-data-source-request.dto';
 import { RepositoryResponseDto } from './dto/repository-response.dto';
 import { DataSourceResponseDto } from './dto/data-source-response.dto';
 import { DataSourceChangeHistoryResponseDto } from './dto/data-source-change-history-response.dto';
@@ -105,37 +106,73 @@ export class RepositoryController {
     return await this.repositoryProvider.deleteRepository(id, userSession.userId);
   }
 
-  // Data Source endpoints (no separate creation - created with repository)
+  // Data Source endpoints
 
-  @Get(':repositoryId/data-source')
+  @Post(':repositoryId/data-sources')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RepositoryGuard)
+  @CheckAbility({ action: 'create', subject: Repository })
+  async createDataSource(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Body() createDataSourceDto: CreateDataSourceRequestDto,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<DataSourceResponseDto> {
+    return await this.repositoryProvider.createDataSource(
+      workspaceId,
+      repositoryId,
+      createDataSourceDto,
+      userSession.userId,
+    );
+  }
+
+  @Get(':repositoryId/data-sources')
   @UseGuards(RepositoryGuard)
   @CheckAbility({ action: 'read', subject: Repository })
-  async getDataSourceByRepositoryId(
+  async getDataSourcesByRepositoryId(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
     @CurrentUser() userSession: UserSession,
-  ): Promise<DataSourceResponseDto | null> {
-    return await this.repositoryProvider.getDataSourceByRepositoryId(
+  ): Promise<DataSourceResponseDto[]> {
+    return await this.repositoryProvider.getDataSourcesByRepositoryId(
       repositoryId,
       userSession.userId,
     );
   }
 
-  @Get(':repositoryId/data-source/configuration')
+  @Get(':repositoryId/data-sources/:dataSourceId')
+  @UseGuards(RepositoryGuard)
+  @CheckAbility({ action: 'read', subject: Repository })
+  async getDataSourceById(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<DataSourceResponseDto> {
+    return await this.repositoryProvider.getDataSourceById(
+      repositoryId,
+      dataSourceId,
+      userSession.userId,
+    );
+  }
+
+  @Get(':repositoryId/data-sources/:dataSourceId/configuration')
   @UseGuards(RepositoryGuard)
   @CheckAbility({ action: 'read', subject: Repository })
   async getDataSourceConfiguration(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @CurrentUser() userSession: UserSession,
-  ): Promise<DataSourceConfigurationResponseDto | null> {
+  ): Promise<DataSourceConfigurationResponseDto> {
     return await this.repositoryProvider.getDataSourceConfiguration(
       repositoryId,
+      dataSourceId,
       userSession.userId,
     );
   }
 
-  @Patch(':repositoryId/data-source/:dataSourceId')
+  @Patch(':repositoryId/data-sources/:dataSourceId')
   @UseGuards(RepositoryGuard)
   @CheckAbility({ action: 'update', subject: Repository })
   async updateDataSource(
@@ -146,6 +183,7 @@ export class RepositoryController {
     @CurrentUser() userSession: UserSession,
   ): Promise<DataSourceResponseDto> {
     return await this.repositoryProvider.updateDataSource(
+      workspaceId,
       repositoryId,
       dataSourceId,
       updateDataSourceDto,
@@ -153,7 +191,7 @@ export class RepositoryController {
     );
   }
 
-  @Delete(':repositoryId/data-source/:dataSourceId')
+  @Delete(':repositoryId/data-sources/:dataSourceId')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RepositoryGuard)
   @CheckAbility({ action: 'delete', subject: Repository })
@@ -170,7 +208,7 @@ export class RepositoryController {
     );
   }
 
-  @Get(':repositoryId/data-source/:dataSourceId/history')
+  @Get(':repositoryId/data-sources/:dataSourceId/history')
   @UseGuards(RepositoryGuard)
   @CheckAbility({ action: 'read', subject: Repository })
   async getDataSourceChangeHistory(

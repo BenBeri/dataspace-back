@@ -4,7 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
+  ManyToOne,
   OneToMany,
   JoinColumn,
 } from 'typeorm';
@@ -32,7 +32,7 @@ export class DataSource {
   @Column()
   repositoryId: string;
 
-  @OneToOne(() => Repository, (repository) => repository.dataSource)
+  @ManyToOne(() => Repository, (repository) => repository.dataSources)
   @JoinColumn({ name: 'repositoryId' })
   repository: Repository;
 

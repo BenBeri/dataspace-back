@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  OneToOne,
+  OneToMany,
   JoinColumn,
   Unique,
 } from 'typeorm';
@@ -37,8 +37,8 @@ export class Repository {
   @JoinColumn({ name: 'workspaceId' })
   workspace: Workspace;
 
-  @OneToOne(() => DataSource, (dataSource) => dataSource.repository)
-  dataSource: DataSource;
+  @OneToMany(() => DataSource, (dataSource) => dataSource.repository)
+  dataSources: DataSource[];
 
   @CreateDateColumn()
   createdAt: Date;

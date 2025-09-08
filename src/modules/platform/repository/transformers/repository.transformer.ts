@@ -21,8 +21,8 @@ export class RepositoryTransformer {
       responseDto.workspace = WorkspaceTransformer.toResponseDto(repository.workspace);
     }
     
-    if (repository.dataSource) {
-      responseDto.dataSource = DataSourceTransformer.toResponseDto(repository.dataSource);
+    if (repository.dataSources && repository.dataSources.length > 0) {
+      responseDto.dataSources = DataSourceTransformer.toResponseDtoArray(repository.dataSources);
     }
     
     return responseDto;

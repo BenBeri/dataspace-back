@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { RepositoryService } from '../services/repository.service';
 import { RepositoryFacade } from '../facades/repository.facade';
 import { RepositoryTransformer } from '../transformers/repository.transformer';
@@ -6,6 +6,7 @@ import { DataSourceTransformer } from '../transformers/data-source.transformer';
 import { CreateRepositoryRequestDto } from '../dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from '../dto/update-repository-request.dto';
 import { UpdateDataSourceRequestDto } from '../dto/update-data-source-request.dto';
+import { CreateDataSourceRequestDto } from '../dto/create-data-source-request.dto';
 import { RepositoryResponseDto } from '../dto/repository-response.dto';
 import { DataSourceResponseDto } from '../dto/data-source-response.dto';
 import { DataSourceChangeHistoryResponseDto } from '../dto/data-source-change-history-response.dto';
@@ -91,47 +92,67 @@ export class RepositoryProvider {
     return { message: 'Repository successfully deleted' };
   }
 
-  // Data source operations (no separate creation - created with repository)
+  // Data source operations
 
-  async getDataSourceByRepositoryId(
+  async createDataSource(
+    workspaceId: string,
+    repositoryId: string,
+    createDataSourceDto: CreateDataSourceRequestDto,
+    userId: string,
+  ): Promise<DataSourceResponseDto> {
+    const dataSource = await this.repositoryFacade.createDataSource(
+      workspaceId,
+      repositoryId,
+      createDataSourceDto,
+      userId,
+    );
+
+    return DataSourceTransformer.toResponseDto(dataSource);
+  }
+
+  async getDataSourcesByRepositoryId(
     repositoryId: string,
     userId: string,
-  ): Promise<DataSourceResponseDto | null> {
-    const dataSource = await this.repositoryFacade.getDataSourceByRepositoryId(repositoryId);
+  ): Promise<DataSourceResponseDto[]> {
+    const dataSources = await this.repositoryFacade.getDataSourcesByRepositoryId(repositoryId);
     
-    if (!dataSource) {
-      return null;
-    }
+    return DataSourceTransformer.toResponseDtoArray(dataSources);
+  }
+
+  async getDataSourceById(
+    repositoryId: string,
+    dataSourceId: string,
+    userId: string,
+  ): Promise<DataSourceResponseDto> {
+    const dataSource = await this.repositoryFacade.getDataSourceById(repositoryId, dataSourceId);
     
     return DataSourceTransformer.toResponseDto(dataSource);
   }
 
   async getDataSourceConfiguration(
     repositoryId: string,
+    dataSourceId: string,
     userId: string,
-  ): Promise<DataSourceConfigurationResponseDto | null> {
-    const dataSource = await this.repositoryFacade.getDataSourceByRepositoryId(repositoryId);
-    
-    if (!dataSource) {
-      return null;
-    }
+  ): Promise<DataSourceConfigurationResponseDto> {
+    const dataSource = await this.repositoryFacade.getDataSourceById(repositoryId, dataSourceId);
+    const configuration = await this.repositoryFacade.getDataSourceConfiguration(dataSourceId);
 
-    const configuration = await this.repositoryFacade.getDataSourceConfiguration(repositoryId);
-    
     if (!configuration) {
-      return null;
+      throw new NotFoundException('Configuration not found for data source');
     }
 
     return DataSourceTransformer.toConfigurationResponseDto(dataSource, configuration);
   }
 
   async updateDataSource(
+    workspaceId: string,
     repositoryId: string,
     dataSourceId: string,
     updateDataSourceDto: UpdateDataSourceRequestDto,
     userId: string,
   ): Promise<DataSourceResponseDto> {
     const dataSource = await this.repositoryFacade.updateDataSource(
+      workspaceId,
       repositoryId,
       dataSourceId,
       updateDataSourceDto,
