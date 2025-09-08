@@ -9,7 +9,6 @@ export class DataSourceTransformer {
     const responseDto = new DataSourceResponseDto();
     responseDto.id = dataSource.id;
     responseDto.name = dataSource.name;
-    responseDto.type = dataSource.type;
     responseDto.repositoryId = dataSource.repositoryId;
     responseDto.createdAt = dataSource.createdAt;
     responseDto.updatedAt = dataSource.updatedAt;
@@ -21,7 +20,6 @@ export class DataSourceTransformer {
     const responseDto = new DataSourceConfigurationResponseDto();
     responseDto.id = dataSource.id;
     responseDto.name = dataSource.name;
-    responseDto.type = dataSource.type;
     responseDto.configuration = configuration;
     responseDto.repositoryId = dataSource.repositoryId;
     responseDto.createdAt = dataSource.createdAt;

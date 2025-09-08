@@ -9,7 +9,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Repository } from './repository.entity';
-import { DataSourceType } from '../enums/data-source-type.enum';
 import { DataSourceChangeHistory } from './data-source-change-history.entity';
 
 @Entity('data_sources')
@@ -19,12 +18,6 @@ export class DataSource {
 
   @Column()
   name: string;
-
-  @Column({
-    type: 'enum',
-    enum: DataSourceType,
-  })
-  type: DataSourceType;
 
   @Column('text')
   encryptedConfiguration: string;

@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Workspace } from '../workspace/workspace.entity';
 import { DataSource } from './data-source.entity';
+import { DataSourceType } from '../enums/data-source-type.enum';
 
 @Entity('repositories')
 @Unique(['workspaceId', 'repositoryNameKey'])
@@ -26,6 +27,12 @@ export class Repository {
 
   @Column()
   description: string;
+
+  @Column({
+    type: 'enum',
+    enum: DataSourceType,
+  })
+  type: DataSourceType;
 
   @Column()
   workspaceId: string;

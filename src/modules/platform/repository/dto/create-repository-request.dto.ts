@@ -1,6 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, MaxLength, Matches, ValidateNested, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, MaxLength, Matches, ValidateNested, IsArray, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateDataSourceRequestDto } from './create-data-source-request.dto';
+import { DataSourceType } from '../../entities/enums/data-source-type.enum';
 
 export class CreateRepositoryRequestDto {
   @IsString()
@@ -18,6 +19,10 @@ export class CreateRepositoryRequestDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  @IsEnum(DataSourceType)
+  @IsNotEmpty()
+  type: DataSourceType;
 
   @IsOptional()
   @IsBoolean()

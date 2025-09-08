@@ -8,7 +8,6 @@ import { DataSourceChangeHistory } from '../../entities/repository/data-source-c
 import { CreateRepositoryRequestDto } from '../dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from '../dto/update-repository-request.dto';
 import { UpdateDataSourceRequestDto } from '../dto/update-data-source-request.dto';
-import { DataSourceType } from '../../entities/enums/data-source-type.enum';
 
 @Injectable()
 export class RepositoryFacade {
@@ -33,7 +32,6 @@ export class RepositoryFacade {
         await this.dataSourceService.createDataSource(
           repository.id,
           dataSourceDto.name,
-          dataSourceDto.type,
           dataSourceDto.configuration,
           userId,
           workspaceId,
@@ -68,7 +66,7 @@ export class RepositoryFacade {
   async createDataSource(
     workspaceId: string,
     repositoryId: string,
-    createDataSourceDto: { name: string; type: DataSourceType; configuration: Record<string, any> },
+    createDataSourceDto: { name: string; configuration: Record<string, any> },
     userId: string,
   ): Promise<DataSource> {
     // Verify repository exists and belongs to workspace
@@ -80,7 +78,6 @@ export class RepositoryFacade {
     return await this.dataSourceService.createDataSource(
       repositoryId,
       createDataSourceDto.name,
-      createDataSourceDto.type,
       createDataSourceDto.configuration,
       userId,
       workspaceId,

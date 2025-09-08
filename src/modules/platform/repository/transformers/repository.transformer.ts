@@ -13,6 +13,7 @@ export class RepositoryTransformer {
     responseDto.name = repository.name;
     responseDto.repositoryNameKey = repository.repositoryNameKey;
     responseDto.description = repository.description;
+    responseDto.type = repository.type;
     responseDto.workspaceId = repository.workspaceId;
     responseDto.createdAt = repository.createdAt;
     responseDto.updatedAt = repository.updatedAt;
@@ -48,6 +49,7 @@ export class RepositoryTransformer {
       name: dto.name,
       repositoryNameKey: repositoryNameKey,
       description: dto.description,
+      type: dto.type,
       workspaceId: workspaceId,
     };
   }
@@ -71,6 +73,10 @@ export class RepositoryTransformer {
     
     if (dto.description !== undefined) {
       updates.description = dto.description;
+    }
+    
+    if (dto.type !== undefined) {
+      updates.type = dto.type;
     }
     
     return updates;

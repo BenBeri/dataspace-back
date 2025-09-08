@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, BadRequestException, Inject } from '@nes
 import { DataSource } from '../../entities/repository/data-source.entity';
 import { DataSourceRepository } from '../repositories/data-source.repository';
 import { DataSourceChangeHistoryService } from './data-source-change-history.service';
-import { DataSourceType } from '../../entities/enums/data-source-type.enum';
 import type { IKeyManagementService } from '../../key-management/interfaces/key-management.interface';
 import { KEY_MANAGEMENT_SERVICE } from '../../key-management/key-management.module';
 import { WorkspaceService } from '../../workspace/services/workspace.service';
@@ -49,7 +48,6 @@ export class DataSourceService {
   async createDataSource(
     repositoryId: string,
     name: string,
-    type: DataSourceType,
     configuration: Record<string, any>,
     userId: string,
     workspaceId: string,
@@ -58,7 +56,6 @@ export class DataSourceService {
 
     const dataSourceData = {
       name,
-      type,
       encryptedConfiguration,
       repositoryId,
     };
@@ -70,7 +67,6 @@ export class DataSourceService {
       dataSourceId: dataSource.id,
       userId,
       newName: name,
-      newType: type,
       configurationChanged: true,
       changeDescription: 'Data source created',
     });
@@ -120,7 +116,6 @@ export class DataSourceService {
     id: string,
     updates: {
       name?: string;
-      type?: DataSourceType;
       configuration?: Record<string, any>;
     },
     userId: string,
@@ -144,12 +139,6 @@ export class DataSourceService {
       changes.push('name');
     }
     
-    if (updates.type !== undefined && updates.type !== dataSource.type) {
-      changeData.previousType = dataSource.type;
-      changeData.newType = updates.type;
-      changes.push('type');
-    }
-    
     let updatedData: any = {};
     
     if (updates.configuration !== undefined) {
@@ -166,10 +155,6 @@ export class DataSourceService {
     
     if (updates.name !== undefined) {
       updatedData.name = updates.name;
-    }
-    
-    if (updates.type !== undefined) {
-      updatedData.type = updates.type;
     }
 
     // Only proceed if there are actual changes
