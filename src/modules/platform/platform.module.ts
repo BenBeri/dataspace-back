@@ -23,6 +23,10 @@ import {SharedModule} from "./shared/shared.module";
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
+        ssl: {
+          require: true,
+          rejectUnauthorized: false, // For AWS RDS
+        },
       }),
     }),
     SharedModule,
