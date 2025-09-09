@@ -11,6 +11,7 @@ export class WorkspaceTransformer {
     responseDto.name = workspace.name;
     responseDto.name_key = workspace.name_key;
     responseDto.ownerUserId = workspace.ownerUserId;
+    responseDto.description = workspace.description;
     responseDto.createdAt = workspace.createdAt;
     responseDto.updatedAt = workspace.updatedAt;
     return responseDto;
@@ -33,6 +34,7 @@ export class WorkspaceTransformer {
       name: dto.name,
       name_key: nameKey,
       ownerUserId: ownerUserId,
+      description: dto.description,
     };
   }
 
@@ -48,6 +50,8 @@ export class WorkspaceTransformer {
       }
       entityData.name_key = dto.name_key;
     }
+    
+    if (dto.description !== undefined) entityData.description = dto.description;
     
     return entityData;
   }
