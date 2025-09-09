@@ -5,7 +5,7 @@ import { WorkspaceTransformer } from '../transformers/workspace.transformer';
 import { CreateWorkspaceRequestDto } from '../dto/create-workspace-request.dto';
 import { UpdateWorkspaceRequestDto } from '../dto/update-workspace-request.dto';
 import { QueryFailedError } from 'typeorm';
-import { TransactionManagerService } from '../../services/transaction-manager.service';
+import { TransactionManagerService } from '../../shared/services/transaction-manager.service';
 
 @Injectable()
 export class WorkspaceService {

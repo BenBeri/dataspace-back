@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { WorkspaceMember } from '../../entities/workspace/workspace-member.entity';
 import { WorkspaceMemberRepository } from '../repositories/workspace-member.repository';
-import { TransactionManagerService } from '../../services/transaction-manager.service';
+import { TransactionManagerService } from '../../shared/services/transaction-manager.service';
 
 @Injectable()
 export class WorkspaceMemberService {

@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { S3Service } from '../../services/s3.service';
+import { S3Service } from '../../shared/services/s3.service';
 
 @Injectable()
 export class WorkspaceMediaFacade {

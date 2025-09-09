@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { Role } from '../../entities/workspace/role.entity';
 import { RoleRepository } from '../repositories/role.repository';
-import { TransactionManagerService } from '../../services/transaction-manager.service';
+import { TransactionManagerService } from '../../shared/services/transaction-manager.service';
 import { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 import { DefaultRolesHelper, DefaultRoleConfig } from '../helpers/default-roles.helper';
 import { CreateRoleDto } from '../dto/create-role.dto';

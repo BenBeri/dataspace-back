@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { TRANSACTIONAL_KEY, TransactionalOptions } from '../decorators/transactional.decorator';
-import { TransactionContext } from '../services/transaction-context.service';
+import { TransactionContext } from '../shared/services/transaction-context.service';
 
 @Injectable()
 export class TransactionInterceptor implements NestInterceptor {

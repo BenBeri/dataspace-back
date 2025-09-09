@@ -16,7 +16,7 @@ import { RoleProvider } from './providers/role.provider';
 import { WorkspaceController } from './controllers/workspace.controller';
 import { RoleController } from './controllers/management/role.controller';
 import { KeyManagementModule } from '../key-management/key-management.module';
-import { S3Service } from '../services/s3.service';
+import { S3Service } from '../shared/services/s3.service';
 import { AuthModule } from '../auth/auth.module';
 import { WorkspaceAbilityFactory } from './casl/workspace-ability.factory';
 import { WorkspaceGuard } from './guards/workspace.guard';
@@ -37,7 +37,6 @@ import { WorkspaceValidationHelper } from './helpers/workspace-validation.helper
     RoleService,
     WorkspaceMemberService,
     WorkspaceMediaFacade,
-    S3Service,
     WorkspaceMemberFacade,
     WorkspaceProvider,
     RoleProvider,
@@ -55,7 +54,6 @@ import { WorkspaceValidationHelper } from './helpers/workspace-validation.helper
     RoleService,
     WorkspaceMemberService,
     WorkspaceMediaFacade,
-    S3Service,
     WorkspaceMemberFacade,
     WorkspaceProvider,
     RoleProvider,
