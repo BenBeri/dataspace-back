@@ -28,9 +28,11 @@ import {
 } from './dto/connection-status-response.dto';
 import { CurrentUser } from '../platform/auth/decorators/current-user.decorator';
 import { UserSession } from '../platform/auth/models/user-session.model';
-import { CheckAbility } from '../platform/auth/decorators/check-ability.decorator';
-import { RepositoryGuard } from '../platform/auth/guards/repository.guard';
-import { WorkspaceGuard } from '../platform/auth/guards/workspace.guard';
+import { CheckAbility } from '../platform/workspace/casl/decorators/check-ability.decorator';
+import { RepositoryGuard } from '../platform/repository/guards/repository.guard';
+import { WorkspaceGuard } from '../platform/workspace/guards/workspace.guard';
+import { RepositoryPermission } from '../platform/workspace/enums/repository-permission.enum';
+import { WorkspaceManagementPermission } from '../platform/workspace/enums/workspace-management-permission.enum';
 
 /**
  * Data Engine Controller
@@ -47,7 +49,7 @@ export class DataEngineController {
    */
   @Post(':dataSourceId/execute')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: 'read', subject: 'Repository' })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
   async executeQuery(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -77,7 +79,7 @@ export class DataEngineController {
    */
   @Post(':dataSourceId/batch')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: 'read', subject: 'Repository' })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
   async executeBatchQueries(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -107,7 +109,7 @@ export class DataEngineController {
    */
   @Post(':dataSourceId/transaction')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: 'update', subject: 'Repository' })
+  @CheckAbility({ action: RepositoryPermission.UPDATE, subject: 'Repository' })
   executeTransaction(
     @Param('workspaceId', ParseUUIDPipe) _workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) _repositoryId: string,
@@ -127,7 +129,7 @@ export class DataEngineController {
    */
   @Get(':dataSourceId/status')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: 'read', subject: 'Repository' })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
   async getConnectionStatus(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -146,7 +148,7 @@ export class DataEngineController {
    */
   @Get('')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: 'read', subject: 'Repository' })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
   async getRepositoryDataSources(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -169,7 +171,7 @@ export class DataEngineController {
    */
   @Delete(':dataSourceId/connection')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: 'update', subject: 'Repository' })
+  @CheckAbility({ action: RepositoryPermission.UPDATE, subject: 'Repository' })
   async disconnectDataSource(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -189,7 +191,7 @@ export class DataEngineController {
    */
   @Get(':dataSourceId/native-client')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: 'manage', subject: 'Repository' }) // Requires admin access
+  @CheckAbility({ action: RepositoryPermission.MANAGE, subject: 'Repository' }) // Requires admin access
   async getNativeClient(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -229,7 +231,7 @@ export class DataEngineAdminController {
    */
   @Get('pool/statistics')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: 'manage', subject: 'Workspace' }) // Admin-level access
+  @CheckAbility({ action: WorkspaceManagementPermission.MANAGE, subject: 'Workspace' }) // Admin-level access
   async getPoolStatistics(
     @CurrentUser() _user: UserSession,
   ): Promise<PoolStatisticsResponseDto> {

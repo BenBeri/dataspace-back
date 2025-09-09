@@ -26,11 +26,13 @@ import { GetWorkspaceRepositoriesQueryDto } from './dto/get-workspace-repositori
 import { PaginationDto } from '../../../core/dto/pagination.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserSession } from '../auth/models/user-session.model';
-import { CheckAbility } from '../auth/decorators/check-ability.decorator';
-import { RepositoryGuard } from '../auth/guards/repository.guard';
-import { WorkspaceGuard } from '../auth/guards/workspace.guard';
+import { CheckAbility } from '../workspace/casl/decorators/check-ability.decorator';
+import { RepositoryGuard } from './guards/repository.guard';
+import { WorkspaceGuard } from '../workspace/guards/workspace.guard';
 import { Repository } from '../entities/repository/repository.entity';
 import { Workspace } from '../entities/workspace/workspace.entity';
+import { RepositoryPermission } from '../workspace/enums/repository-permission.enum';
+import { WorkspaceManagementPermission } from '../workspace/enums/workspace-management-permission.enum';
 
 @Controller('workspaces/:workspaceId/repositories')
 export class RepositoryController {
@@ -39,7 +41,7 @@ export class RepositoryController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(WorkspaceGuard)
-  @CheckAbility({ action: 'create', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.CREATE, subject: Repository })
   async createRepository(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Body() createRepositoryDto: CreateRepositoryRequestDto,
@@ -54,7 +56,7 @@ export class RepositoryController {
 
   @Get()
   @UseGuards(WorkspaceGuard)
-  @CheckAbility({ action: 'read', subject: Workspace })
+  @CheckAbility({ action: WorkspaceManagementPermission.READ, subject: Workspace })
   async getRepositoriesByWorkspace(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Query() query: GetWorkspaceRepositoriesQueryDto,
@@ -69,7 +71,7 @@ export class RepositoryController {
 
   @Get(':id')
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'read', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
   async getRepositoryById(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -80,7 +82,7 @@ export class RepositoryController {
 
   @Patch(':id')
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'update', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.UPDATE, subject: Repository })
   async updateRepository(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -97,7 +99,7 @@ export class RepositoryController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'delete', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.DELETE, subject: Repository })
   async deleteRepository(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -111,7 +113,7 @@ export class RepositoryController {
   @Post(':repositoryId/data-sources')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'create', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.CREATE, subject: Repository })
   async createDataSource(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -128,7 +130,7 @@ export class RepositoryController {
 
   @Get(':repositoryId/data-sources')
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'read', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
   async getDataSourcesByRepositoryId(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -142,7 +144,7 @@ export class RepositoryController {
 
   @Get(':repositoryId/data-sources/:dataSourceId')
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'read', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
   async getDataSourceById(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -158,7 +160,7 @@ export class RepositoryController {
 
   @Get(':repositoryId/data-sources/:dataSourceId/configuration')
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'read', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
   async getDataSourceConfiguration(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -174,7 +176,7 @@ export class RepositoryController {
 
   @Patch(':repositoryId/data-sources/:dataSourceId')
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'update', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.UPDATE, subject: Repository })
   async updateDataSource(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -194,7 +196,7 @@ export class RepositoryController {
   @Delete(':repositoryId/data-sources/:dataSourceId')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'delete', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.DELETE, subject: Repository })
   async deleteDataSource(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
@@ -210,7 +212,7 @@ export class RepositoryController {
 
   @Get(':repositoryId/data-sources/:dataSourceId/history')
   @UseGuards(RepositoryGuard)
-  @CheckAbility({ action: 'read', subject: Repository })
+  @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
   async getDataSourceChangeHistory(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,

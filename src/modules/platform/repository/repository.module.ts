@@ -12,6 +12,8 @@ import { RepositoryRepository } from './repositories/repository.repository';
 import { DataSourceRepository } from './repositories/data-source.repository';
 import { DataSourceChangeHistoryRepository } from './repositories/data-source-change-history.repository';
 import { RepositoryFacade } from './facades/repository.facade';
+import { RepositoryGuard } from './guards/repository.guard';
+import { CaslRepositoryGuard } from './guards/casl-repository.guard';
 import { WorkspaceModule } from '../workspace/workspace.module';
 import { AuthModule } from '../auth/auth.module';
 import { KeyManagementModule } from '../key-management/key-management.module';
@@ -44,6 +46,10 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     
     // Facades
     RepositoryFacade,
+    
+    // Guards
+    RepositoryGuard,
+    CaslRepositoryGuard,
   ],
   exports: [
     RepositoryService,
@@ -51,6 +57,8 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     RepositoryFacade,
     DataSourceService,
     DataSourceRepository,
+    RepositoryGuard,
+    CaslRepositoryGuard,
   ],
 })
 export class RepositoryModule {}

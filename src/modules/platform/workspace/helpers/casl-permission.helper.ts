@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { WorkspaceMemberService } from '../../workspace/services/workspace-member.service';
 import { WorkspaceService } from '../../workspace/services/workspace.service';
-import { CaslAbilityFactory, AbilityContext, Action } from '../casl/casl-ability.factory';
-import { WorkspacePermissions } from '../interfaces/workspace-permissions.interface';
+import { WorkspaceAbilityFactory, AbilityContext, Action } from '../../workspace/casl/workspace-ability.factory';
+import { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 
 @Injectable()
 export class CaslPermissionHelper {
   constructor(
     private readonly workspaceMemberService: WorkspaceMemberService,
     private readonly workspaceService: WorkspaceService,
-    private readonly caslAbilityFactory: CaslAbilityFactory,
+    private readonly workspaceAbilityFactory: WorkspaceAbilityFactory,
   ) {}
 
   /**
@@ -56,7 +56,7 @@ export class CaslPermissionHelper {
     conditions?: any
   ): Promise<boolean> {
     const context = await this.createAbilityContext(userId, workspaceId);
-    return this.caslAbilityFactory.canAccess(context, action, subject, conditions);
+    return this.workspaceAbilityFactory.canAccess(context, action, subject, conditions);
   }
 
   /**
@@ -64,7 +64,7 @@ export class CaslPermissionHelper {
    */
   async getAbility(userId: string, workspaceId: string) {
     const context = await this.createAbilityContext(userId, workspaceId);
-    return this.caslAbilityFactory.createForUser(context);
+    return this.workspaceAbilityFactory.createForUser(context);
   }
 
   /**
@@ -113,6 +113,6 @@ export class CaslPermissionHelper {
       permissions,
     };
 
-    return this.caslAbilityFactory.createForUser(context);
+    return this.workspaceAbilityFactory.createForUser(context);
   }
 }

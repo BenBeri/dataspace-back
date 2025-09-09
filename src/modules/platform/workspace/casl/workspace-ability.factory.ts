@@ -3,7 +3,7 @@ import { AbilityBuilder, ExtractSubjectType, InferSubjects, Ability } from '@cas
 import { Repository } from '../../entities/repository/repository.entity';
 import { Workspace } from '../../entities/workspace/workspace.entity';
 import { User } from '../../entities/user/user.entity';
-import { WorkspacePermissions } from '../interfaces/workspace-permissions.interface';
+import { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 import { WorkspaceManagementPermission } from '../enums/workspace-management-permission.enum';
 import { RepositoryPermission } from '../enums/repository-permission.enum';
 import { UserPermission } from '../enums/user-permission.enum';
@@ -26,7 +26,7 @@ export interface AbilityContext {
 }
 
 @Injectable()
-export class CaslAbilityFactory {
+export class WorkspaceAbilityFactory {
   createForUser(context: AbilityContext): AppAbility {
     const { can, cannot, build } = new AbilityBuilder<AppAbility>(Ability);
 

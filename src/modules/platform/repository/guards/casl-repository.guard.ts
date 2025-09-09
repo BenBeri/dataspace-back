@@ -6,10 +6,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { CaslPermissionHelper } from '../helpers/casl-permission.helper';
-import { WorkspaceValidationHelper } from '../helpers/workspace-validation.helper';
-import { RepositoryService } from '../../repository/services/repository.service';
-import { WorkspaceGuard } from './workspace.guard';
+import { CaslPermissionHelper } from '../../workspace/helpers/casl-permission.helper';
+import { WorkspaceValidationHelper } from '../../workspace/helpers/workspace-validation.helper';
+import { RepositoryService } from '../services/repository.service';
+import { WorkspaceGuard } from '../../workspace/guards/workspace.guard';
 
 @Injectable()
 export class CaslRepositoryGuard extends WorkspaceGuard implements CanActivate {

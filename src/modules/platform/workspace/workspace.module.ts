@@ -18,6 +18,10 @@ import { RoleController } from './controllers/management/role.controller';
 import { KeyManagementModule } from '../key-management/key-management.module';
 import { S3Service } from '../services/s3.service';
 import { AuthModule } from '../auth/auth.module';
+import { WorkspaceAbilityFactory } from './casl/workspace-ability.factory';
+import { WorkspaceGuard } from './guards/workspace.guard';
+import { CaslPermissionHelper } from './helpers/casl-permission.helper';
+import { WorkspaceValidationHelper } from './helpers/workspace-validation.helper';
 
 @Module({
   imports: [
@@ -37,6 +41,10 @@ import { AuthModule } from '../auth/auth.module';
     WorkspaceMemberFacade,
     WorkspaceProvider,
     RoleProvider,
+    WorkspaceAbilityFactory,
+    WorkspaceGuard,
+    CaslPermissionHelper,
+    WorkspaceValidationHelper,
   ],
   controllers: [WorkspaceController, RoleController],
   exports: [
@@ -51,6 +59,10 @@ import { AuthModule } from '../auth/auth.module';
     WorkspaceMemberFacade,
     WorkspaceProvider,
     RoleProvider,
+    WorkspaceAbilityFactory,
+    WorkspaceGuard,
+    CaslPermissionHelper,
+    WorkspaceValidationHelper,
   ],
 })
 export class WorkspaceModule {}

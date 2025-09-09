@@ -38,6 +38,6 @@ import { SharedModule } from './shared/shared.module';
   ],
   controllers: [],
   providers: [],
-  exports: [AuthModule, KeyManagementModule, RepositoryModule],
+  exports: [AuthModule, KeyManagementModule, WorkspaceModule, RepositoryModule],
 })
 export class PlatformModule {}

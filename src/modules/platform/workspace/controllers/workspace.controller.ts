@@ -26,10 +26,10 @@ import { WorkspaceMemberResponseDto } from '../dto/workspace-member-response.dto
 import { MyWorkspaceResponseDto } from '../dto/my-workspace-response.dto';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { UserSession } from '../../auth/models/user-session.model';
-import { WorkspaceGuard } from '../../auth/guards/workspace.guard';
-import { CheckAbility } from '../../auth/decorators/check-ability.decorator';
+import { WorkspaceGuard } from '../guards/workspace.guard';
+import { CheckAbility } from '../casl/decorators/check-ability.decorator';
 import { Workspace } from '../../entities/workspace/workspace.entity';
-import { WorkspaceManagementPermission } from '../../auth/enums/workspace-management-permission.enum';
+import { WorkspaceManagementPermission } from '../enums/workspace-management-permission.enum';
 
 @Controller('workspaces')
 export class WorkspaceController {

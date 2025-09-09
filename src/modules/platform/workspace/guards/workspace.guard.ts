@@ -8,7 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { CaslPermissionHelper } from '../helpers/casl-permission.helper';
 import { WorkspaceValidationHelper } from '../helpers/workspace-validation.helper';
-import { CHECK_ABILITY_KEY, RequiredRule, AbilityCheck } from '../decorators/check-ability.decorator';
+import { CHECK_ABILITY_KEY, RequiredRule, AbilityCheck } from '../casl/decorators/check-ability.decorator';
 
 @Injectable()
 export class WorkspaceGuard implements CanActivate {
