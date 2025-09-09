@@ -29,6 +29,9 @@ export class Workspace {
   @Column({ nullable: true })
   kmsKeyId: string;
 
+  @Column({ nullable: true })
+  description: string;
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'ownerUserId' })
   owner: User;
