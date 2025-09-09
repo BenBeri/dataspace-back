@@ -1,0 +1,31 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: dataspace_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: dataspace_admin
+      MONGO_INITDB_ROOT_PASSWORD: dataspace_mongo_password123
+      MONGO_INITDB_DATABASE: dataspace_db
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dataspace_network
+
+volumes:
+  mongodb_data:
+    external: true
+    name: dataspace_mongodb_data
+
+networks:
+  dataspace_network:
+    external: true
+    name: dataspace_network

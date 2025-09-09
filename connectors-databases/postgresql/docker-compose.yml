@@ -1,0 +1,48 @@
+services:
+  postgresql:
+    image: postgres:15
+    container_name: dataspace_postgresql
+    restart: always
+    environment:
+      POSTGRES_DB: dataspace_db
+      POSTGRES_USER: dataspace_user
+      POSTGRES_PASSWORD: dataspace_password123
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Enable SSL
+      POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256'
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+      - ./ssl-certs:/var/lib/postgresql/ssl
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dataspace_user -d dataspace_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      bash -c "
+        # Generate self-signed SSL certificates if they don't exist
+        if [ ! -f /var/lib/postgresql/ssl/server.crt ]; then
+          mkdir -p /var/lib/postgresql/ssl
+          openssl req -new -x509 -days 365 -nodes -text -out /var/lib/postgresql/ssl/server.crt -keyout /var/lib/postgresql/ssl/server.key -subj '/CN=localhost'
+          chmod 600 /var/lib/postgresql/ssl/server.key
+          chown postgres:postgres /var/lib/postgresql/ssl/server.key /var/lib/postgresql/ssl/server.crt
+        fi
+        
+        # Start PostgreSQL with SSL enabled
+        exec docker-entrypoint.sh postgres -c ssl=on -c ssl_cert_file=/var/lib/postgresql/ssl/server.crt -c ssl_key_file=/var/lib/postgresql/ssl/server.key
+      "
+    networks:
+      - dataspace_network
+
+volumes:
+  postgresql_data:
+    external: true
+    name: dataspace_postgresql_data
+
+networks:
+  dataspace_network:
+    external: true
+    name: dataspace_network

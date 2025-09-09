@@ -37,9 +37,7 @@ import { WorkspaceGuard } from '../platform/auth/guards/workspace.guard';
  * Provides REST API endpoints for multi-database query execution
  * Follows project convention: Controller → Provider → Service → Repository
  */
-@Controller(
-  'api/workspaces/:workspaceId/repositories/:repositoryId/data-sources',
-)
+@Controller('workspaces/:workspaceId/repositories/:repositoryId/data-sources')
 @UseGuards(WorkspaceGuard, RepositoryGuard)
 export class DataEngineController {
   constructor(private readonly dataEngineProvider: DataEngineProvider) {}
@@ -221,7 +219,7 @@ export class DataEngineController {
  * Admin Controller for connection pool management
  * Separate controller for admin-only operations
  */
-@Controller('api/admin/data-engine')
+@Controller('admin/data-engine')
 @UseGuards(WorkspaceGuard) // Admin guard would be better, but using workspace guard for now
 export class DataEngineAdminController {
   constructor(private readonly dataEngineProvider: DataEngineProvider) {}

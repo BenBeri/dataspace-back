@@ -31,12 +31,16 @@ export class DataEngineProvider {
   ) {}
 
   /**
-   * Extract database type from decrypted configuration
+   * Extract database type from decrypted configuration (DEPRECATED)
+   * Note: Database type should now come from repository.type instead of configuration
+   * This method is kept for backwards compatibility but should not be used
    */
   private extractDatabaseType(config: Record<string, any>): DataSourceType {
     const type = config.type;
     if (!type) {
-      throw new BadRequestException('Database type not found in configuration');
+      throw new BadRequestException(
+        'Database type not found in configuration. Database type should be specified at repository level.',
+      );
     }
 
     // Validate that the type is a valid DataSourceType
@@ -301,15 +305,6 @@ export class DataEngineProvider {
 
       for (const dataSource of dataSources) {
         try {
-          // Get decrypted configuration to extract database type
-          const decryptedConfig =
-            await this.dataSourceService.getDecryptedConfigurationById(
-              dataSource.id,
-            );
-          const dbType = decryptedConfig
-            ? this.extractDatabaseType(decryptedConfig)
-            : DataSourceType.POSTGRES; // fallback
-
           // Use getConnection to follow proper orchestration pattern
           const connection = await this.getConnection(
             workspaceId,
@@ -322,29 +317,16 @@ export class DataEngineProvider {
           result.push({
             dataSourceId: dataSource.id,
             name: dataSource.name,
-            type: dbType,
+            type: connection.type,
             status: healthCheck.healthy ? 'healthy' : 'unhealthy',
             connectedAt: connection.createdAt,
           });
         } catch {
-          // Try to get configuration even if connection failed
-          let dbType = DataSourceType.POSTGRES; // fallback
-          try {
-            const decryptedConfig =
-              await this.dataSourceService.getDecryptedConfigurationById(
-                dataSource.id,
-              );
-            if (decryptedConfig) {
-              dbType = this.extractDatabaseType(decryptedConfig);
-            }
-          } catch {
-            // If we can't get the configuration, use fallback
-          }
-
+          // If connection failed, get database type from repository
           result.push({
             dataSourceId: dataSource.id,
             name: dataSource.name,
-            type: dbType,
+            type: repository.type,
             status: 'disconnected' as const,
           });
         }
@@ -496,7 +478,15 @@ export class DataEngineProvider {
         dataSourceId,
       );
 
-      // 2. Get data source information
+      // 2. Get repository information to get database type
+      const repository =
+        await this.repositoryService.getRepositoryById(repositoryId);
+
+      if (!repository) {
+        throw new NotFoundException(`Repository ${repositoryId} not found`);
+      }
+
+      // 3. Get data source information
       const dataSource =
         await this.dataSourceService.getDataSourceById(dataSourceId);
 
@@ -504,9 +494,11 @@ export class DataEngineProvider {
         throw new NotFoundException(`Data source ${dataSourceId} not found`);
       }
 
-      // 3. Get decrypted configuration using existing KMS integration
+      // 4. Get decrypted configuration using existing KMS integration
       const decryptedConfig =
-        await this.dataSourceService.getDecryptedConfiguration(repositoryId);
+        await this.dataSourceService.getDecryptedConfigurationById(
+          dataSourceId,
+        );
 
       if (!decryptedConfig) {
         throw new NotFoundException(
@@ -514,10 +506,10 @@ export class DataEngineProvider {
         );
       }
 
-      // 4. Extract database type from configuration
-      const dbType = this.extractDatabaseType(decryptedConfig);
+      // 5. Get database type from repository (not from data source configuration)
+      const dbType = repository.type;
 
-      // 5. Use connection pool service to get/create connection
+      // 6. Use connection pool service to get/create connection
       const connection = await this.connectionPoolService.getConnection(
         workspaceId,
         repositoryId,
