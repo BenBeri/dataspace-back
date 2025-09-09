@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {UsersModule} from "./users/users.module";
-import {WorkspaceModule} from "./workspace/workspace.module";
-import {RepositoryModule} from "./repository/repository.module";
-import {AuthModule} from "./auth/auth.module";
-import {KeyManagementModule} from "./key-management/key-management.module";
-import {SharedModule} from "./shared/shared.module";
+import { UsersModule } from './users/users.module';
+import { WorkspaceModule } from './workspace/workspace.module';
+import { RepositoryModule } from './repository/repository.module';
+import { AuthModule } from './auth/auth.module';
+import { KeyManagementModule } from './key-management/key-management.module';
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
@@ -38,6 +38,6 @@ import {SharedModule} from "./shared/shared.module";
   ],
   controllers: [],
   providers: [],
-  exports: [KeyManagementModule],
+  exports: [AuthModule, KeyManagementModule, RepositoryModule],
 })
 export class PlatformModule {}

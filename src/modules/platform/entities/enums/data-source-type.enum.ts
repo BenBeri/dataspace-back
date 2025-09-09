@@ -6,10 +6,11 @@ export enum DataSourceType {
   MYSQL = 'mysql',
   MONGODB = 'mongodb',
   REDIS = 'redis',
+  MSSQL = 'mssql',
+  SQLITE = 'sqlite',
+  ORACLE = 'oracle',
   ELASTICSEARCH = 'elasticsearch',
   CASSANDRA = 'cassandra',
   DYNAMODB = 'dynamodb',
-  ORACLE = 'oracle',
   SQLSERVER = 'sqlserver',
-  SQLITE = 'sqlite',
 }
