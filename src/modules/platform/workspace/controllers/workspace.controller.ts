@@ -10,17 +10,25 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
-import { WorkspaceProvider } from './providers/workspace.provider';
-import { CreateWorkspaceRequestDto } from './dto/create-workspace-request.dto';
-import { UpdateWorkspaceRequestDto } from './dto/update-workspace-request.dto';
-import { AddMemberRequestDto } from './dto/add-member-request.dto';
-import { UpdateMemberRoleRequestDto } from './dto/update-member-role-request.dto';
-import { WorkspaceResponseDto } from './dto/workspace-response.dto';
-import { WorkspaceMemberResponseDto } from './dto/workspace-member-response.dto';
-import { MyWorkspaceResponseDto } from './dto/my-workspace-response.dto';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UserSession } from '../auth/models/user-session.model';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { WorkspaceProvider } from '../providers/workspace.provider';
+import { CreateWorkspaceRequestDto } from '../dto/create-workspace-request.dto';
+import { UpdateWorkspaceRequestDto } from '../dto/update-workspace-request.dto';
+import { AddMemberRequestDto } from '../dto/add-member-request.dto';
+import { UpdateMemberRoleRequestDto } from '../dto/update-member-role-request.dto';
+import { WorkspaceResponseDto } from '../dto/workspace-response.dto';
+import { WorkspaceMemberResponseDto } from '../dto/workspace-member-response.dto';
+import { MyWorkspaceResponseDto } from '../dto/my-workspace-response.dto';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { UserSession } from '../../auth/models/user-session.model';
+import { WorkspaceGuard } from '../../auth/guards/workspace.guard';
+import { CheckAbility } from '../../auth/decorators/check-ability.decorator';
+import { Workspace } from '../../entities/workspace/workspace.entity';
 
 @Controller('workspaces')
 export class WorkspaceController {
@@ -106,5 +114,34 @@ export class WorkspaceController {
   @Get('users/:userId/memberships')
   async getUserWorkspaces(@Param('userId', ParseUUIDPipe) userId: string): Promise<WorkspaceMemberResponseDto[]> {
     return await this.workspaceProvider.getUserWorkspaces(userId);
+  }
+
+  @Post(':id/logo')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(WorkspaceGuard)
+  @CheckAbility({ action: 'update', subject: Workspace })
+  @UseInterceptors(FileInterceptor('logo'))
+  async setWorkspaceLogo(
+    @Param('id', ParseUUIDPipe) workspaceId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<{ message: string }> {
+    if (!file) {
+      throw new BadRequestException('Logo file is required');
+    }
+
+    await this.workspaceProvider.setWorkspaceLogo(workspaceId, file.buffer, file.mimetype);
+    return { message: 'Workspace logo uploaded successfully' };
+  }
+
+  @Delete(':id/logo')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(WorkspaceGuard)
+  @CheckAbility({ action: 'update', subject: Workspace })
+  async deleteWorkspaceLogo(
+    @Param('id', ParseUUIDPipe) workspaceId: string,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<{ message: string }> {
+    return await this.workspaceProvider.deleteWorkspaceLogo(workspaceId);
   }
 }

@@ -1,6 +1,8 @@
 import {Injectable, Logger, Inject} from '@nestjs/common';
 import {WorkspaceService} from '../services/workspace.service';
 import {WorkspaceMemberService} from '../services/workspace-member.service';
+import {RoleService} from '../services/role.service';
+import {WorkspaceMediaFacade} from '../facades/workspace-media.facade';
 import {WorkspaceMemberFacade} from '../facades/workspace-member.facade';
 import {WorkspaceTransformer} from '../transformers/workspace.transformer';
 import {WorkspaceMemberTransformer} from '../transformers/workspace-member.transformer';
@@ -22,6 +24,8 @@ export class WorkspaceProvider {
     constructor(
         private readonly workspaceService: WorkspaceService,
         private readonly workspaceMemberService: WorkspaceMemberService,
+        private readonly roleService: RoleService,
+        private readonly workspaceMediaFacade: WorkspaceMediaFacade,
         private readonly workspaceMemberFacade: WorkspaceMemberFacade,
         @Inject(KEY_MANAGEMENT_SERVICE)
         private readonly keyManagementService: IKeyManagementService,
@@ -60,17 +64,39 @@ export class WorkspaceProvider {
             throw new Error(`Failed to create workspace encryption key: ${keyError.message}`);
         }
 
-        return WorkspaceTransformer.toResponseDto(workspace);
+        // 3. Create roles for the workspace
+        try {
+            const roles = await this.roleService.createDefaultRoles(workspace.id, createWorkspaceDto.roles);
+            const adminRole = roles.find(role => role.name === 'admin');
+            
+            if (!adminRole) {
+                throw new Error('Admin role was not created properly');
+            }
+
+            // 4. Assign the workspace creator to the admin role
+            await this.workspaceMemberService.addMemberToWorkspace(
+                workspace.id,
+                ownerUserId,
+                adminRole.id
+            );
+
+            this.logger.log(`Successfully created roles and assigned owner to admin role for workspace ${workspace.id}`);
+        } catch (roleError) {
+            this.logger.error(`Failed to create roles or assign owner for workspace ${workspace.id}: ${roleError.message}`);
+            throw new Error(`Failed to setup workspace roles: ${roleError.message}`);
+        }
+
+        return await this.enrichWithLogoUrl(WorkspaceTransformer.toResponseDto(workspace));
     }
 
     async getWorkspaceById(id: string): Promise<WorkspaceResponseDto> {
         const workspace = await this.workspaceService.getWorkspaceById(id);
-        return WorkspaceTransformer.toResponseDto(workspace);
+        return await this.enrichWithLogoUrl(WorkspaceTransformer.toResponseDto(workspace));
     }
 
     async updateWorkspace(id: string, updateWorkspaceDto: UpdateWorkspaceRequestDto, currentUserId: string): Promise<WorkspaceResponseDto> {
         const workspace = await this.workspaceService.updateWorkspace(id, updateWorkspaceDto, currentUserId);
-        return WorkspaceTransformer.toResponseDto(workspace);
+        return await this.enrichWithLogoUrl(WorkspaceTransformer.toResponseDto(workspace));
     }
 
     async deleteWorkspace(id: string, currentUserId: string): Promise<{ message: string }> {
@@ -104,20 +130,35 @@ export class WorkspaceProvider {
         ]);
 
         // Convert owned workspaces to MyWorkspaceResponseDto format
-        const ownedWorkspaceResponses: MyWorkspaceResponseDto[] = ownedWorkspaces.map(workspace => ({
-            workspaceId: workspace.id,
-            nameKey: workspace.name_key,
-            ownerUserId: workspace.ownerUserId,
-            role: {
-                name: 'Owner',
-                permissions: {}, // Owner has all permissions by default
-            },
-            createdAt: workspace.createdAt,
-            updatedAt: workspace.updatedAt,
-        }));
+        const ownedWorkspaceResponses: MyWorkspaceResponseDto[] = await Promise.all(
+            ownedWorkspaces.map(async workspace => {
+                const logoUrl = await this.workspaceMediaFacade.getWorkspaceLogoUrl(workspace.id);
+                return {
+                    workspaceId: workspace.id,
+                    nameKey: workspace.name_key,
+                    ownerUserId: workspace.ownerUserId,
+                    role: {
+                        name: 'Owner',
+                        permissions: {}, // Owner has all permissions by default
+                    },
+                    createdAt: workspace.createdAt,
+                    updatedAt: workspace.updatedAt,
+                    logoUrl,
+                };
+            })
+        );
 
-        // Convert member workspaces using existing transformer
-        const memberWorkspaceResponses = WorkspaceMemberTransformer.toMyWorkspaceResponseDtoArray(memberWorkspaces);
+        // Convert member workspaces using existing transformer and add logo URLs
+        const memberWorkspaceResponsesWithoutLogo = WorkspaceMemberTransformer.toMyWorkspaceResponseDtoArray(memberWorkspaces);
+        const memberWorkspaceResponses = await Promise.all(
+            memberWorkspaceResponsesWithoutLogo.map(async memberWorkspace => {
+                const logoUrl = await this.workspaceMediaFacade.getWorkspaceLogoUrl(memberWorkspace.workspaceId);
+                return {
+                    ...memberWorkspace,
+                    logoUrl,
+                };
+            })
+        );
 
         // Combine and remove duplicates (in case owner is also added as member)
         const allWorkspaces = [...ownedWorkspaceResponses];
@@ -142,6 +183,48 @@ export class WorkspaceProvider {
 
     async getWorkspacesByOwner(ownerUserId: string): Promise<WorkspaceResponseDto[]> {
         const workspaces = await this.workspaceService.getWorkspacesByOwner(ownerUserId);
-        return WorkspaceTransformer.toResponseDtoArray(workspaces);
+        const responseArray = WorkspaceTransformer.toResponseDtoArray(workspaces);
+        return await this.enrichArrayWithLogoUrl(responseArray);
+    }
+
+    /**
+     * Set workspace logo
+     * @param workspaceId - The workspace ID
+     * @param logoBuffer - The logo image buffer
+     * @param mimeType - The MIME type of the image
+     */
+    async setWorkspaceLogo(workspaceId: string, logoBuffer: Buffer, mimeType: string): Promise<void> {
+        await this.workspaceMediaFacade.setWorkspaceLogo(workspaceId, logoBuffer, mimeType);
+    }
+
+    /**
+     * Delete workspace logo
+     * @param workspaceId - The workspace ID
+     */
+    async deleteWorkspaceLogo(workspaceId: string): Promise<{ message: string }> {
+        await this.workspaceMediaFacade.deleteWorkspaceLogo(workspaceId);
+        return { message: 'Workspace logo successfully deleted' };
+    }
+
+    /**
+     * Enrich single workspace response with logo URL
+     * @param workspaceResponse - Workspace response DTO
+     */
+    private async enrichWithLogoUrl(workspaceResponse: WorkspaceResponseDto): Promise<WorkspaceResponseDto> {
+        const logoUrl = await this.workspaceMediaFacade.getWorkspaceLogoUrl(workspaceResponse.id);
+        return {
+            ...workspaceResponse,
+            logoUrl,
+        };
+    }
+
+    /**
+     * Enrich array of workspace responses with logo URLs
+     * @param workspaceResponses - Array of workspace response DTOs
+     */
+    private async enrichArrayWithLogoUrl(workspaceResponses: WorkspaceResponseDto[]): Promise<WorkspaceResponseDto[]> {
+        return await Promise.all(
+            workspaceResponses.map(async (workspace) => await this.enrichWithLogoUrl(workspace))
+        );
     }
 }

@@ -6,4 +6,5 @@ export class WorkspaceResponseDto {
   description: string;
   createdAt: Date;
   updatedAt: Date;
+  logoUrl?: string | null;
 }

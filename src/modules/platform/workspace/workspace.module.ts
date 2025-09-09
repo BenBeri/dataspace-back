@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Workspace } from '../entities/workspace/workspace.entity';
 import { Role } from '../entities/workspace/role.entity';
@@ -9,15 +9,22 @@ import { WorkspaceMemberRepository } from './repositories/workspace-member.repos
 import { WorkspaceService } from './services/workspace.service';
 import { RoleService } from './services/role.service';
 import { WorkspaceMemberService } from './services/workspace-member.service';
+import { WorkspaceMediaFacade } from './facades/workspace-media.facade';
 import { WorkspaceMemberFacade } from './facades/workspace-member.facade';
 import { WorkspaceProvider } from './providers/workspace.provider';
 import { RoleProvider } from './providers/role.provider';
-import { WorkspaceController } from './workspace.controller';
-import { RoleController } from './role.controller';
+import { WorkspaceController } from './controllers/workspace.controller';
+import { RoleController } from './controllers/management/role.controller';
 import { KeyManagementModule } from '../key-management/key-management.module';
+import { S3Service } from '../services/s3.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Workspace, Role, WorkspaceMember]), KeyManagementModule],
+  imports: [
+    TypeOrmModule.forFeature([Workspace, Role, WorkspaceMember]), 
+    KeyManagementModule,
+    forwardRef(() => AuthModule),
+  ],
   providers: [
     WorkspaceRepository,
     RoleRepository,
@@ -25,6 +32,8 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     WorkspaceService,
     RoleService,
     WorkspaceMemberService,
+    WorkspaceMediaFacade,
+    S3Service,
     WorkspaceMemberFacade,
     WorkspaceProvider,
     RoleProvider,
@@ -37,6 +46,8 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     WorkspaceService,
     RoleService,
     WorkspaceMemberService,
+    WorkspaceMediaFacade,
+    S3Service,
     WorkspaceMemberFacade,
     WorkspaceProvider,
     RoleProvider,

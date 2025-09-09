@@ -8,5 +8,6 @@ export class MyWorkspaceResponseDto {
   };
   createdAt: Date;
   updatedAt: Date;
+  logoUrl?: string | null;
 }
 

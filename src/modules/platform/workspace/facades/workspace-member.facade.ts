@@ -28,7 +28,7 @@ export class WorkspaceMemberFacade {
     }
 
     // Get role by name
-    const role = await this.roleService.getRoleByName(addMemberDto.roleName);
+    const role = await this.roleService.getRoleByName(workspaceId, addMemberDto.roleName);
     
     // Add member to workspace
     const member = await this.workspaceMemberService.addMemberToWorkspace(workspaceId, addMemberDto.userId, role.id);
@@ -51,7 +51,7 @@ export class WorkspaceMemberFacade {
     }
 
     // Get role by name
-    const role = await this.roleService.getRoleByName(updateMemberRoleDto.roleName);
+    const role = await this.roleService.getRoleByName(workspaceId, updateMemberRoleDto.roleName);
     
     // Update member role
     const member = await this.workspaceMemberService.updateMemberRole(workspaceId, userId, role.id, currentUserId);

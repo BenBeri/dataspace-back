@@ -10,24 +10,29 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { RoleProvider } from './providers/role.provider';
-import { CreateRoleRequestDto } from './dto/create-role-request.dto';
-import { UpdateRoleRequestDto } from './dto/update-role-request.dto';
-import { RoleResponseDto } from './dto/role-response.dto';
+import { RoleProvider } from '../../providers/role.provider';
+import { CreateRoleDto } from '../../dto/create-role.dto';
+import { UpdateRoleRequestDto } from '../../dto/update-role-request.dto';
+import { RoleResponseDto } from '../../dto/role-response.dto';
 
-@Controller('roles')
+@Controller('workspaces/:workspaceId/roles')
 export class RoleController {
   constructor(private readonly roleProvider: RoleProvider) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createRole(@Body() createRoleDto: CreateRoleRequestDto): Promise<RoleResponseDto> {
-    return await this.roleProvider.createRole(createRoleDto);
+  async createRole(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Body() createRoleDto: CreateRoleDto
+  ): Promise<RoleResponseDto> {
+    return await this.roleProvider.createRole(workspaceId, createRoleDto);
   }
 
   @Get()
-  async getAllRoles(): Promise<RoleResponseDto[]> {
-    return await this.roleProvider.getAllRoles();
+  async getWorkspaceRoles(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string
+  ): Promise<RoleResponseDto[]> {
+    return await this.roleProvider.getWorkspaceRoles(workspaceId);
   }
 
   @Get(':id')

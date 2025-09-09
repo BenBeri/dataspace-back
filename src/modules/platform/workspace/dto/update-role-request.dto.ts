@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsObject } from 'class-validator';
+import type { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 
 export class UpdateRoleRequestDto {
   @IsString()
@@ -7,5 +8,5 @@ export class UpdateRoleRequestDto {
 
   @IsObject()
   @IsOptional()
-  permissions?: Record<string, any>;
+  permissions?: WorkspacePermissions;
 }
