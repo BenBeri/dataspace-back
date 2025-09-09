@@ -1,0 +1,159 @@
+services:
+  # PostgreSQL Database
+  postgresql:
+    image: postgres:15
+    container_name: dataspace_postgresql
+    restart: always
+    environment:
+      POSTGRES_DB: dataspace_db
+      POSTGRES_USER: dataspace_user
+      POSTGRES_PASSWORD: dataspace_password123
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256'
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+      - ./postgresql/init-scripts:/docker-entrypoint-initdb.d
+      - ./postgresql/ssl-certs:/var/lib/postgresql/ssl
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dataspace_user -d dataspace_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      bash -c "
+        if [ ! -f /var/lib/postgresql/ssl/server.crt ]; then
+          mkdir -p /var/lib/postgresql/ssl
+          openssl req -new -x509 -days 365 -nodes -text -out /var/lib/postgresql/ssl/server.crt -keyout /var/lib/postgresql/ssl/server.key -subj '/CN=localhost'
+          chmod 600 /var/lib/postgresql/ssl/server.key
+          chown postgres:postgres /var/lib/postgresql/ssl/server.key /var/lib/postgresql/ssl/server.crt
+        fi
+        exec docker-entrypoint.sh postgres -c ssl=on -c ssl_cert_file=/var/lib/postgresql/ssl/server.crt -c ssl_key_file=/var/lib/postgresql/ssl/server.key
+      "
+    networks:
+      - dataspace_network
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: dataspace_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: dataspace_admin
+      MONGO_INITDB_ROOT_PASSWORD: dataspace_mongo_password123
+      MONGO_INITDB_DATABASE: dataspace_db
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongodb/init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dataspace_network
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: dataspace_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: dataspace_root_password123
+      MYSQL_DATABASE: dataspace_db
+      MYSQL_USER: dataspace_user
+      MYSQL_PASSWORD: dataspace_password123
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'dataspace_user',
+          '-pdataspace_password123',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: --default-authentication-plugin=mysql_native_password --ssl-mode=REQUIRED
+    networks:
+      - dataspace_network
+
+  # Redis Cache/Database
+  redis:
+    image: redis:7-alpine
+    container_name: dataspace_redis
+    restart: always
+    command: redis-server --requirepass dataspace_password123 --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'dataspace_password123', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dataspace_network
+
+  # SQLite Database (runs once to create the database file)
+  sqlite:
+    image: alpine:latest
+    container_name: dataspace_sqlite
+    restart: 'no'
+    volumes:
+      - sqlite_data:/data
+      - ./sqlite/init-scripts:/init-scripts
+    command: >
+      sh -c "
+        apk add --no-cache sqlite &&
+        sqlite3 /data/dataspace.db < /init-scripts/01-init.sql &&
+        echo 'SQLite database initialized successfully' &&
+        sleep infinity
+      "
+    healthcheck:
+      test: ['CMD', 'test', '-f', '/data/dataspace.db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dataspace_network
+
+volumes:
+  # PostgreSQL volume
+  postgresql_data:
+    name: dataspace_postgresql_data
+
+  # MongoDB volume
+  mongodb_data:
+    name: dataspace_mongodb_data
+
+  # MySQL volume
+  mysql_data:
+    name: dataspace_mysql_data
+
+  # Redis volume
+  redis_data:
+    name: dataspace_redis_data
+
+  # SQLite volume
+  sqlite_data:
+    name: dataspace_sqlite_data
+
+networks:
+  dataspace_network:
+    name: dataspace_network
+    driver: bridge
+    external: false

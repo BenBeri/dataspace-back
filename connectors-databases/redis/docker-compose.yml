@@ -1,0 +1,27 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: dataspace_redis
+    restart: always
+    command: redis-server --requirepass dataspace_password123 --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'dataspace_password123', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dataspace_network
+
+volumes:
+  redis_data:
+    external: true
+    name: dataspace_redis_data
+
+networks:
+  dataspace_network:
+    external: true
+    name: dataspace_network

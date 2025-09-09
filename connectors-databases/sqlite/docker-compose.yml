@@ -1,0 +1,32 @@
+services:
+  sqlite:
+    image: alpine:latest
+    container_name: dataspace_sqlite
+    restart: 'no' # SQLite doesn't need to stay running
+    volumes:
+      - sqlite_data:/data
+      - ./init-scripts:/init-scripts
+    command: >
+      sh -c "
+        apk add --no-cache sqlite &&
+        sqlite3 /data/dataspace.db < /init-scripts/01-init.sql &&
+        echo 'SQLite database initialized successfully' &&
+        sleep infinity
+      "
+    healthcheck:
+      test: ['CMD', 'test', '-f', '/data/dataspace.db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dataspace_network
+
+volumes:
+  sqlite_data:
+    external: true
+    name: dataspace_sqlite_data
+
+networks:
+  dataspace_network:
+    external: true
+    name: dataspace_network

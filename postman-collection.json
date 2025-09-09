@@ -939,7 +939,12 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}"
+              ]
             },
             "description": "Gets a specific repository by ID. Response includes repository type, all data sources, and workspace details."
           },
@@ -962,7 +967,12 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}"
+              ]
             },
             "description": "Updates a repository including its database type. Note: Changing the database type affects all data sources in the repository - ensure compatibility."
           },
@@ -976,7 +986,12 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}"
+              ]
             },
             "description": "Deletes a repository and all its associated data sources. The operation is cascaded - deleting the repository also removes all data sources and their change history."
           },
@@ -1024,7 +1039,13 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources"
+              ]
             },
             "description": "Creates a new data source within a repository. The data source inherits the database type from the repository (no type field needed). Configuration is encrypted before storage."
           },
@@ -1038,7 +1059,13 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources"
+              ]
             },
             "description": "Gets all data sources associated with a repository. Response includes name, repositoryId, and timestamps but not configuration (use specific endpoint for configuration)."
           },
@@ -1052,7 +1079,14 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}"
+              ]
             },
             "description": "Gets a specific data source by ID. Returns basic information without configuration. Use the configuration endpoint to get decrypted configuration."
           },
@@ -1066,7 +1100,15 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/configuration",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}", "configuration"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}",
+                "configuration"
+              ]
             },
             "description": "Gets the decrypted configuration for a specific data source. This endpoint returns both the data source metadata and the decrypted configuration object."
           },
@@ -1089,7 +1131,14 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}"
+              ]
             },
             "description": "Updates a data source. Both name and configuration are optional. Changes are tracked in the change history with user attribution. Configuration is encrypted before storage."
           },
@@ -1103,7 +1152,14 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}"
+              ]
             },
             "description": "Deletes a data source and all its associated change history. This removes the data source from the repository but doesn't affect other data sources."
           },
@@ -1117,7 +1173,15 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/history?offset=0&limit=10",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}", "history"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}",
+                "history"
+              ],
               "query": [
                 {
                   "key": "offset",
@@ -1134,6 +1198,407 @@
             "description": "Gets paginated change history for a data source. Shows all modifications made to the data source including name and configuration changes with user attribution and timestamps."
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Data Engine",
+      "description": "Multi-database query execution endpoints. Execute queries, batch operations, and manage connections for various database types (PostgreSQL, MySQL, MongoDB, etc.).",
+      "item": [
+        {
+          "name": "Execute Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"SELECT * FROM users WHERE id = ?\",\n  \"params\": [1],\n  \"timeout\": 30000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/execute",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}",
+                "execute"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"SELECT * FROM users LIMIT 5\",\n  \"params\": []\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/execute",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "repositories",
+                    "{{repositoryId}}",
+                    "data-sources",
+                    "{{dataSourceId}}",
+                    "execute"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\"\n    }\n  ],\n  \"rowCount\": 1,\n  \"executionTime\": 25,\n  \"type\": \"postgres\"\n}"
+            }
+          ],
+          "description": "Execute a single query on a data source. Supports parameterized queries and custom timeouts. The query format depends on the database type (SQL for PostgreSQL/MySQL, MongoDB query objects, etc.)."
+        },
+        {
+          "name": "Execute Batch Queries",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": [\n    {\n      \"query\": \"SELECT COUNT(*) as user_count FROM users\",\n      \"params\": []\n    },\n    {\n      \"query\": \"SELECT * FROM users WHERE isActive = ?\",\n      \"params\": [true]\n    },\n    {\n      \"query\": \"INSERT INTO audit_logs (action, userId) VALUES (?, ?)\",\n      \"params\": [\"batch_query\", 1]\n    }\n  ],\n  \"timeout\": 60000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/batch",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}",
+                "batch"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"queries\": [\n    {\n      \"query\": \"SELECT COUNT(*) as user_count FROM users\",\n      \"params\": []\n    },\n    {\n      \"query\": \"SELECT * FROM users WHERE isActive = ?\",\n      \"params\": [true]\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/batch",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "repositories",
+                    "{{repositoryId}}",
+                    "data-sources",
+                    "{{dataSourceId}}",
+                    "batch"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"results\": [\n    {\n      \"success\": true,\n      \"data\": [{\"user_count\": 150}],\n      \"rowCount\": 1\n    },\n    {\n      \"success\": true,\n      \"data\": [{\"id\": 1, \"email\": \"user@example.com\"}],\n      \"rowCount\": 1\n    }\n  ],\n  \"totalExecutionTime\": 45,\n  \"type\": \"postgres\",\n  \"queryCount\": 2\n}"
+            }
+          ],
+          "description": "Execute multiple queries in batch on a data source. Useful for running related queries together with better performance than individual requests."
+        },
+        {
+          "name": "Execute Transaction (Reserved)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"type\": \"query\",\n      \"query\": \"INSERT INTO users (email, firstName) VALUES (?, ?)\",\n      \"params\": [\"newuser@example.com\", \"New\"]\n    },\n    {\n      \"type\": \"query\",\n      \"query\": \"UPDATE user_stats SET total_users = total_users + 1\",\n      \"params\": []\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/transaction",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}",
+                "transaction"
+              ]
+            }
+          },
+          "description": "Execute operations within a database transaction. Currently returns an error indicating the endpoint is reserved for future implementation. Requires specific transaction operation implementation."
+        },
+        {
+          "name": "Get Connection Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}",
+                "status"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "repositories",
+                    "{{repositoryId}}",
+                    "data-sources",
+                    "{{dataSourceId}}",
+                    "status"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"workspaceId\": \"uuid\",\n  \"repositoryId\": \"uuid\",\n  \"dataSourceId\": \"uuid\",\n  \"type\": \"postgres\",\n  \"status\": \"healthy\",\n  \"connectedAt\": \"2024-01-01T12:00:00Z\",\n  \"responseTime\": 15\n}"
+            }
+          ],
+          "description": "Get connection status for a specific data source. Returns health status, connection details, and response time metrics."
+        },
+        {
+          "name": "Get Repository Data Sources",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "repositories",
+                    "{{repositoryId}}",
+                    "data-sources"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"workspaceId\": \"uuid\",\n  \"repositoryId\": \"uuid\",\n  \"dataSources\": [\n    {\n      \"dataSourceId\": \"uuid\",\n      \"name\": \"Development Database\",\n      \"type\": \"postgres\",\n      \"status\": \"healthy\",\n      \"connectedAt\": \"2024-01-01T12:00:00Z\"\n    },\n    {\n      \"dataSourceId\": \"uuid\",\n      \"name\": \"Staging Database\",\n      \"type\": \"postgres\",\n      \"status\": \"healthy\",\n      \"connectedAt\": \"2024-01-01T12:05:00Z\"\n    }\n  ]\n}"
+            }
+          ],
+          "description": "Get all data sources for a repository with their connection status. Shows overview of all data sources and their health status."
+        },
+        {
+          "name": "Disconnect Data Source",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/connection",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}",
+                "connection"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/connection",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "repositories",
+                    "{{repositoryId}}",
+                    "data-sources",
+                    "{{dataSourceId}}",
+                    "connection"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Data source connection disconnected successfully\"\n}"
+            }
+          ],
+          "description": "Disconnect a specific data source connection. Useful for manually managing connection pools or closing connections."
+        },
+        {
+          "name": "Get Native Client Info (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/native-client",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "data-sources",
+                "{{dataSourceId}}",
+                "native-client"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/native-client",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "repositories",
+                    "{{repositoryId}}",
+                    "data-sources",
+                    "{{dataSourceId}}",
+                    "native-client"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"type\": \"postgres\",\n  \"warning\": \"Direct client access bypasses connection pool management. Use with extreme caution.\",\n  \"hasClient\": true\n}"
+            }
+          ],
+          "description": "Get native database client information (admin endpoint). Returns client type and availability but not the actual client object for security reasons. Requires manage permissions on the repository."
+        }
+      ]
+    },
+    {
+      "name": "Data Engine Admin",
+      "description": "Administrative endpoints for data engine connection pool management. Requires elevated permissions.",
+      "item": [
+        {
+          "name": "Get Pool Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/data-engine/pool/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "data-engine", "pool", "statistics"]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/data-engine/pool/statistics",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "data-engine", "pool", "statistics"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"totalConnections\": 45,\n  \"activeConnections\": 12,\n  \"connectionsByType\": {\n    \"postgres\": 25,\n    \"mysql\": 15,\n    \"mongodb\": 5\n  },\n  \"connectionsByWorkspace\": {\n    \"workspace-uuid-1\": 20,\n    \"workspace-uuid-2\": 15,\n    \"workspace-uuid-3\": 10\n  },\n  \"timestamp\": \"2024-01-01T12:00:00Z\"\n}"
+            }
+          ],
+          "description": "Get connection pool statistics (admin only). Returns detailed metrics about active connections, connection types, and workspace distribution. Requires workspace manage permissions."
         }
       ]
     },
@@ -1158,7 +1623,13 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId}}/admin",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "members", "{{userId}}", "admin"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "members",
+                "{{userId}}",
+                "admin"
+              ]
             },
             "description": "Promotes a workspace member to admin. Admin members have full access to all workspace operations, bypassing role-based permissions. Only workspace owners and existing admin members can promote others."
           },
@@ -1181,7 +1652,13 @@
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId}}/admin",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "members", "{{userId}}", "admin"]
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "members",
+                "{{userId}}",
+                "admin"
+              ]
             },
             "description": "Revokes admin privileges from a workspace member. The member will fall back to role-based permissions. Only workspace owners and admin members can revoke admin privileges."
           },

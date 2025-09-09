@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: dataspace_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: dataspace_root_password123
+      MYSQL_DATABASE: dataspace_db
+      MYSQL_USER: dataspace_user
+      MYSQL_PASSWORD: dataspace_password123
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'dataspace_user',
+          '-pdataspace_password123',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: --default-authentication-plugin=mysql_native_password --ssl-mode=REQUIRED
+    networks:
+      - dataspace_network
+
+volumes:
+  mysql_data:
+    external: true
+    name: dataspace_mysql_data
+
+networks:
+  dataspace_network:
+    external: true
+    name: dataspace_network
