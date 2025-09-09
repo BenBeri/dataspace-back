@@ -29,6 +29,7 @@ import { UserSession } from '../../auth/models/user-session.model';
 import { WorkspaceGuard } from '../../auth/guards/workspace.guard';
 import { CheckAbility } from '../../auth/decorators/check-ability.decorator';
 import { Workspace } from '../../entities/workspace/workspace.entity';
+import { WorkspaceManagementPermission } from '../../auth/enums/workspace-management-permission.enum';
 
 @Controller('workspaces')
 export class WorkspaceController {
@@ -119,7 +120,7 @@ export class WorkspaceController {
   @Post(':id/logo')
   @HttpCode(HttpStatus.OK)
   @UseGuards(WorkspaceGuard)
-  @CheckAbility({ action: 'update', subject: Workspace })
+  @CheckAbility({ action: WorkspaceManagementPermission.UPDATE, subject: Workspace })
   @UseInterceptors(FileInterceptor('logo'))
   async setWorkspaceLogo(
     @Param('id', ParseUUIDPipe) workspaceId: string,
@@ -137,7 +138,7 @@ export class WorkspaceController {
   @Delete(':id/logo')
   @HttpCode(HttpStatus.OK)
   @UseGuards(WorkspaceGuard)
-  @CheckAbility({ action: 'update', subject: Workspace })
+  @CheckAbility({ action: WorkspaceManagementPermission.UPDATE, subject: Workspace })
   async deleteWorkspaceLogo(
     @Param('id', ParseUUIDPipe) workspaceId: string,
     @CurrentUser() userSession: UserSession,

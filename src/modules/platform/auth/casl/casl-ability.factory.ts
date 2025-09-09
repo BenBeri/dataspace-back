@@ -4,12 +4,15 @@ import { Repository } from '../../entities/repository/repository.entity';
 import { Workspace } from '../../entities/workspace/workspace.entity';
 import { User } from '../../entities/user/user.entity';
 import { WorkspacePermissions } from '../interfaces/workspace-permissions.interface';
+import { WorkspaceManagementPermission } from '../enums/workspace-management-permission.enum';
+import { RepositoryPermission } from '../enums/repository-permission.enum';
+import { UserPermission } from '../enums/user-permission.enum';
 
 // Define all subjects that can have permissions applied
 type Subjects = InferSubjects<typeof Repository | typeof Workspace | typeof User> | 'all';
 
 // Define all actions that can be performed
-export type Action = 'manage' | 'create' | 'read' | 'update' | 'delete';
+export type Action = WorkspaceManagementPermission | RepositoryPermission | UserPermission;
 
 // Define the ability type
 export type AppAbility = Ability<[Action, Subjects]>;
@@ -29,7 +32,7 @@ export class CaslAbilityFactory {
 
     // Workspace owners have full access to everything
     if (context.isWorkspaceOwner) {
-      can('manage', 'all');
+      can(WorkspaceManagementPermission.MANAGE, 'all');
       return build({
         detectSubjectType: (item) => item.constructor as ExtractSubjectType<Subjects>,
       });
@@ -46,43 +49,43 @@ export class CaslAbilityFactory {
 
     // Workspace permissions
     if (permissions.read) {
-      can('read', Workspace, { id: context.workspaceId });
+      can(WorkspaceManagementPermission.READ, Workspace, { id: context.workspaceId });
     }
     if (permissions.write) {
-      can('update', Workspace, { id: context.workspaceId });
+      can(WorkspaceManagementPermission.UPDATE, Workspace, { id: context.workspaceId });
     }
     if (permissions.delete) {
-      can('delete', Workspace, { id: context.workspaceId });
+      can(WorkspaceManagementPermission.DELETE, Workspace, { id: context.workspaceId });
     }
 
     // User permissions
     if (permissions.users?.read) {
-      can('read', User);
+      can(UserPermission.READ, User);
     }
     if (permissions.users?.write) {
-      can(['create', 'update'], User);
+      can([UserPermission.CREATE, UserPermission.UPDATE], User);
     }
     if (permissions.users?.delete) {
-      can('delete', User);
+      can(UserPermission.DELETE, User);
     }
 
     // Repository permissions
     if (permissions.repository) {
       // Public repository permissions
       if (permissions.repository.read) {
-        can('read', Repository, { 
+        can(RepositoryPermission.READ, Repository, { 
           workspaceId: context.workspaceId,
           isPrivate: false 
         });
       }
       if (permissions.repository.write) {
-        can(['create', 'update'], Repository, { 
+        can([RepositoryPermission.CREATE, RepositoryPermission.UPDATE], Repository, { 
           workspaceId: context.workspaceId,
           isPrivate: false 
         });
       }
       if (permissions.repository.delete) {
-        can('delete', Repository, { 
+        can(RepositoryPermission.DELETE, Repository, { 
           workspaceId: context.workspaceId,
           isPrivate: false 
         });
@@ -97,19 +100,19 @@ export class CaslAbilityFactory {
         };
 
         if (privateRepo.permissions.read) {
-          can('read', Repository, conditions);
+          can(RepositoryPermission.READ, Repository, conditions);
         }
         if (privateRepo.permissions.write) {
-          can('update', Repository, conditions);
+          can(RepositoryPermission.UPDATE, Repository, conditions);
         }
         if (privateRepo.permissions.delete) {
-          can('delete', Repository, conditions);
+          can(RepositoryPermission.DELETE, Repository, conditions);
         }
       });
 
       // Allow creation of repositories if user has write permission
       if (permissions.repository.write) {
-        can('create', Repository, { workspaceId: context.workspaceId });
+        can(RepositoryPermission.CREATE, Repository, { workspaceId: context.workspaceId });
       }
     }
 
