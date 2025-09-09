@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsBoolean, MaxLength, Matches } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, MaxLength, Matches, IsEnum } from 'class-validator';
+import { DataSourceType } from '../../entities/enums/data-source-type.enum';
 
 export class UpdateRepositoryRequestDto {
   @IsString()
@@ -16,6 +17,10 @@ export class UpdateRepositoryRequestDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsOptional()
+  @IsEnum(DataSourceType)
+  type?: DataSourceType;
 
   @IsOptional()
   @IsBoolean()

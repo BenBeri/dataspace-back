@@ -27,7 +27,7 @@ export class RepositoryRepository {
   async findById(id: string): Promise<Repository | null> {
     return await this.repository.findOne({
       where: { id },
-      relations: ['workspace', 'dataSource'],
+      relations: ['workspace', 'dataSources'],
     });
   }
 
@@ -59,7 +59,7 @@ export class RepositoryRepository {
   ): Promise<[Repository[], number]> {
     const queryBuilder = this.repository.createQueryBuilder('repository')
       .leftJoinAndSelect('repository.workspace', 'workspace')
-      .leftJoinAndSelect('repository.dataSource', 'dataSource');
+      .leftJoinAndSelect('repository.dataSources', 'dataSources');
     
     queryBuilder.where('repository.workspaceId = :workspaceId', { workspaceId });
 
@@ -84,7 +84,7 @@ export class RepositoryRepository {
       skip,
       take,
       order: { createdAt: 'DESC' },
-      relations: ['workspace', 'dataSource'],
+      relations: ['workspace', 'dataSources'],
     });
   }
 
@@ -115,7 +115,7 @@ export class RepositoryRepository {
   async findByIdAndWorkspaceId(id: string, workspaceId: string): Promise<Repository | null> {
     return await this.repository.findOne({
       where: { id, workspaceId },
-      relations: ['workspace', 'dataSource'],
+      relations: ['workspace', 'dataSources'],
     });
   }
 }

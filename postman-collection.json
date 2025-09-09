@@ -1,10 +1,10 @@
 {
   "info": {
     "name": "Dataspace API",
-    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, Repositories and Data Sources management. Now featuring CASL-based permission system with workspace owner privileges, admin member roles, and private repository support. Updated with enhanced security and fine-grained access control.",
+    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, Repositories and Data Sources management. Now featuring CASL-based permission system with workspace owner privileges, admin member roles, and private repository support. Updated with repository-level database types and multiple data sources per repository support.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "dataspace-api-collection",
-    "version": "4.0.0"
+    "version": "5.0.0"
   },
   "variable": [
     {
@@ -766,26 +766,70 @@
     },
     {
       "name": "Repositories",
-      "description": "CRUD operations for repositories with workspace-based permissions. Repository creation automatically creates an associated data source. Data sources can be managed separately after creation.",
+      "description": "CRUD operations for repositories with workspace-based permissions. Repositories now have database types at the repository level, and can contain multiple data sources.",
       "item": [
         {
-          "name": "Create Repository with Data Source (Custom key)",
+          "name": "Create Repository (No Data Sources)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "// Extract and save the repository ID and data source ID from response",
+                  "// Extract and save the repository ID from response",
                   "if (pm.response.code === 201) {",
                   "    const response = pm.response.json();",
                   "    if (response.id) {",
                   "        pm.collectionVariables.set('repositoryId', response.id);",
                   "        console.log('Repository ID saved:', response.id);",
-                  "        console.log('Custom repositoryNameKey used:', response.repositoryNameKey);",
-                  "        if (response.dataSource && response.dataSource.id) {",
-                  "            pm.collectionVariables.set('dataSourceId', response.dataSource.id);",
-                  "            console.log('Data Source ID saved:', response.dataSource.id);",
+                  "        console.log('Repository type:', response.type);",
+                  "        console.log('Data sources:', response.dataSources ? response.dataSources.length : 0);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My PostgreSQL Repository\",\n  \"repositoryNameKey\": \"my-postgres-repo\",\n  \"description\": \"A PostgreSQL repository without initial data sources\",\n  \"type\": \"postgres\",\n  \"isPrivate\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories"]
+            },
+            "description": "Creates a repository without initial data sources. The repository has a database type (POSTGRESQL, MYSQL, MONGODB, etc.) and data sources can be added later. The repositoryNameKey must contain only lowercase letters, numbers, and single dashes (max 32 characters)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Repository with Multiple Data Sources",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Extract and save the repository ID from response",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('repositoryId', response.id);",
+                  "        console.log('Repository ID saved:', response.id);",
+                  "        console.log('Repository type:', response.type);",
+                  "        if (response.dataSources && response.dataSources.length > 0) {",
+                  "            pm.collectionVariables.set('dataSourceId', response.dataSources[0].id);",
+                  "            console.log('First Data Source ID saved:', response.dataSources[0].id);",
+                  "            console.log('Total data sources created:', response.dataSources.length);",
                   "        }",
                   "    }",
                   "}"
@@ -803,36 +847,31 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"My Repository\",\n  \"repositoryNameKey\": \"my-repo\",\n  \"description\": \"A sample repository for testing\",\n  \"isPrivate\": false,\n  \"dataSource\": {\n    \"dataSourceName\": \"PostgreSQL Database\",\n    \"dataSourceType\": \"postgres\",\n    \"configuration\": {\n      \"host\": \"localhost\",\n      \"port\": 5432,\n      \"database\": \"my_database\",\n      \"username\": \"postgres\",\n      \"password\": \"password\",\n      \"ssl\": false\n    }\n  }\n}"
+              "raw": "{\n  \"name\": \"Multi-Environment PostgreSQL\",\n  \"repositoryNameKey\": \"multi-env-postgres\",\n  \"description\": \"PostgreSQL repository with multiple environment data sources\",\n  \"type\": \"postgres\",\n  \"isPrivate\": false,\n  \"dataSources\": [\n    {\n      \"name\": \"Development Database\",\n      \"configuration\": {\n        \"host\": \"localhost\",\n        \"port\": 5432,\n        \"database\": \"dev_database\",\n        \"username\": \"dev_user\",\n        \"password\": \"dev_password\",\n        \"ssl\": false\n      }\n    },\n    {\n      \"name\": \"Staging Database\",\n      \"configuration\": {\n        \"host\": \"staging.db.example.com\",\n        \"port\": 5432,\n        \"database\": \"staging_database\",\n        \"username\": \"staging_user\",\n        \"password\": \"staging_password\",\n        \"ssl\": true\n      }\n    },\n    {\n      \"name\": \"Production Database\",\n      \"configuration\": {\n        \"host\": \"prod.db.example.com\",\n        \"port\": 5432,\n        \"database\": \"prod_database\",\n        \"username\": \"prod_user\",\n        \"password\": \"prod_password\",\n        \"ssl\": true,\n        \"connectionLimit\": 20\n      }\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "{{workspaceId}}", "repositories"]
             },
-            "description": "Creates a new repository with associated data source. Both repository and data source are created atomically. The repositoryNameKey must contain only lowercase letters, numbers, and single dashes (max 32 characters). Set isPrivate to true for private repositories. Requires CASL 'create' ability on Repository subject. Workspace owners and admin members have automatic access."
+            "description": "Creates a repository with multiple data sources. All data sources belong to the same database type (specified at repository level). This example creates a PostgreSQL repository with development, staging, and production data sources."
           },
           "response": []
         },
         {
-          "name": "Create Repository with Data Source (Auto-generated key)",
+          "name": "Create MongoDB Repository",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "// Extract and save the repository ID and data source ID from response",
+                  "// Extract and save the repository ID from response",
                   "if (pm.response.code === 201) {",
                   "    const response = pm.response.json();",
                   "    if (response.id) {",
                   "        pm.collectionVariables.set('repositoryId', response.id);",
-                  "        console.log('Repository ID saved:', response.id);",
-                  "        console.log('Auto-generated repositoryNameKey:', response.repositoryNameKey);",
-                  "        if (response.dataSource && response.dataSource.id) {",
-                  "            pm.collectionVariables.set('dataSourceId', response.dataSource.id);",
-                  "            console.log('Data Source ID saved:', response.dataSource.id);",
-                  "        }",
+                  "        console.log('MongoDB Repository ID saved:', response.id);",
                   "    }",
                   "}"
                 ]
@@ -849,37 +888,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"API Gateway Service v2\",\n  \"description\": \"Advanced API gateway for microservices\",\n  \"isPrivate\": false,\n  \"dataSource\": {\n    \"dataSourceName\": \"Gateway Database\",\n    \"dataSourceType\": \"postgres\",\n    \"configuration\": {\n      \"host\": \"db.example.com\",\n      \"port\": 5432,\n      \"database\": \"gateway_db\",\n      \"username\": \"gateway_user\",\n      \"password\": \"secure_password\",\n      \"ssl\": true,\n      \"connectionLimit\": 10\n    }\n  }\n}"
+              "raw": "{\n  \"name\": \"Document Storage\",\n  \"description\": \"MongoDB repository for document storage\",\n  \"type\": \"mongodb\",\n  \"isPrivate\": true,\n  \"dataSources\": [\n    {\n      \"name\": \"Primary Cluster\",\n      \"configuration\": {\n        \"connectionString\": \"mongodb://localhost:27017/documents\",\n        \"authDatabase\": \"admin\",\n        \"username\": \"mongo_user\",\n        \"password\": \"mongo_password\"\n      }\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "{{workspaceId}}", "repositories"]
             },
-            "description": "Creates a repository with data source without providing repositoryNameKey - the system will auto-generate it from the name (e.g., 'API Gateway Service v2' -> 'api-gateway-service-v2'). Requires CASL 'create' ability on Repository subject. Workspace owners and admin members have automatic access."
-          },
-          "response": []
-        },
-        {
-          "name": "Create Repository (Duplicate key - Error Test)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Duplicate Repo Test\",\n  \"repositoryNameKey\": \"my-repo\",\n  \"description\": \"This should fail with unique constraint error\",\n  \"dataSource\": {\n    \"dataSourceName\": \"Test Database\",\n    \"dataSourceType\": \"postgres\",\n    \"configuration\": {\n      \"host\": \"localhost\",\n      \"port\": 5432,\n      \"database\": \"test_db\"\n    }\n  }\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
-              "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories"]
-            },
-            "description": "Tests unique constraint validation - should return 400 error with validation-formatted message when trying to use an existing repositoryNameKey. Run this after creating the first repository to see the error response."
+            "description": "Creates a MongoDB repository (private) with a single data source. Repository type is set to MONGODB and all data sources inherit this type."
           },
           "response": []
         },
@@ -911,35 +927,7 @@
                 }
               ]
             },
-            "description": "Gets paginated list of repositories in a specific workspace with optional search. Response includes both public and private repositories based on user permissions. Private repositories are only shown if user has explicit access or is workspace owner/admin. Uses CASL 'read' ability on Workspace subject."
-          },
-          "response": []
-        },
-        {
-          "name": "Get Repositories by Workspace with Search",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories?limit=5&offset=0&search=sample",
-              "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories"],
-              "query": [
-                {
-                  "key": "limit",
-                  "value": "5"
-                },
-                {
-                  "key": "offset",
-                  "value": "0"
-                },
-                {
-                  "key": "search",
-                  "value": "sample"
-                }
-              ]
-            },
-            "description": "Example of searching repositories by name or description with pagination."
+            "description": "Gets paginated list of repositories in a specific workspace. Response includes repository type and array of data sources. Private repositories are only shown if user has explicit access or is workspace owner/admin."
           },
           "response": []
         },
@@ -953,12 +941,12 @@
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
             },
-            "description": "Gets a specific repository by ID. For private repositories, requires explicit permission or workspace owner/admin access. Response includes full workspace and data source details. Uses CASL 'read' ability on Repository subject with automatic private repository permission validation."
+            "description": "Gets a specific repository by ID. Response includes repository type, all data sources, and workspace details."
           },
           "response": []
         },
         {
-          "name": "Update Repository",
+          "name": "Update Repository (Including Type)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -969,14 +957,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Repository Name\",\n  \"repositoryNameKey\": \"updated-repo\",\n  \"description\": \"Updated description for the repository\"\n}"
+              "raw": "{\n  \"name\": \"Updated Repository Name\",\n  \"description\": \"Updated description\",\n  \"type\": \"mysql\",\n  \"isPrivate\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}",
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
             },
-            "description": "Updates an existing repository. All fields (name, repositoryNameKey, description, isPrivate) are optional. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'update' ability on Repository subject."
+            "description": "Updates a repository including its database type. Note: Changing the database type affects all data sources in the repository - ensure compatibility."
           },
           "response": []
         },
@@ -990,7 +978,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}"]
             },
-            "description": "Deletes a repository and its associated data source. The operation is cascaded - deleting the repository also removes the data source and its change history. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'delete' ability on Repository subject."
+            "description": "Deletes a repository and all its associated data sources. The operation is cascaded - deleting the repository also removes all data sources and their change history."
           },
           "response": []
         }
@@ -998,19 +986,89 @@
     },
     {
       "name": "Data Sources",
-      "description": "Data source management endpoints. Data sources are created automatically with repositories and can be modified separately.",
+      "description": "Data source management endpoints. Data sources inherit the database type from their parent repository and can be managed independently.",
       "item": [
         {
-          "name": "Get Data Source by Repository",
+          "name": "Create Data Source",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Extract and save the data source ID from response",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('dataSourceId', response.id);",
+                  "        console.log('Data Source ID saved:', response.id);",
+                  "        console.log('Data Source name:', response.name);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Testing Environment\",\n  \"configuration\": {\n    \"host\": \"test.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"test_database\",\n    \"username\": \"test_user\",\n    \"password\": \"test_password\",\n    \"ssl\": true,\n    \"connectionTimeout\": 30\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources"]
+            },
+            "description": "Creates a new data source within a repository. The data source inherits the database type from the repository (no type field needed). Configuration is encrypted before storage."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Data Sources for Repository",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-source",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-source"]
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources"]
             },
-            "description": "Gets the data source associated with a repository. Each repository has exactly one data source. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'read' ability on Repository subject."
+            "description": "Gets all data sources associated with a repository. Response includes name, repositoryId, and timestamps but not configuration (use specific endpoint for configuration)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Data Source by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}"]
+            },
+            "description": "Gets a specific data source by ID. Returns basic information without configuration. Use the configuration endpoint to get decrypted configuration."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Data Source Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/configuration",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}", "configuration"]
+            },
+            "description": "Gets the decrypted configuration for a specific data source. This endpoint returns both the data source metadata and the decrypted configuration object."
           },
           "response": []
         },
@@ -1026,14 +1084,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Database Name\",\n  \"type\": \"postgres\",\n  \"configuration\": {\n    \"host\": \"updated.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"updated_database\",\n    \"username\": \"new_user\",\n    \"password\": \"new_password\",\n    \"ssl\": true,\n    \"connectionLimit\": 20\n  }\n}"
+              "raw": "{\n  \"name\": \"Updated Testing Environment\",\n  \"configuration\": {\n    \"host\": \"updated-test.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"updated_test_database\",\n    \"username\": \"updated_test_user\",\n    \"password\": \"updated_test_password\",\n    \"ssl\": true,\n    \"connectionTimeout\": 60,\n    \"maxConnections\": 15\n  }\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-source/{{dataSourceId}}",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-source", "{{dataSourceId}}"]
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}"]
             },
-            "description": "Updates an existing data source. All fields (name, type, configuration) are optional. Changes are tracked in the change history with user attribution. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'update' ability on Repository subject."
+            "description": "Updates a data source. Both name and configuration are optional. Changes are tracked in the change history with user attribution. Configuration is encrypted before storage."
           },
           "response": []
         },
@@ -1043,11 +1101,11 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-source/{{dataSourceId}}",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-source", "{{dataSourceId}}"]
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}"]
             },
-            "description": "Deletes a data source and all its associated change history. This operation removes the OneToOne relationship with the repository. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'delete' ability on Repository subject."
+            "description": "Deletes a data source and all its associated change history. This removes the data source from the repository but doesn't affect other data sources."
           },
           "response": []
         },
@@ -1057,9 +1115,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-source/{{dataSourceId}}/history?offset=0&limit=10",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/history?offset=0&limit=10",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-source", "{{dataSourceId}}", "history"],
+              "path": ["workspaces", "{{workspaceId}}", "repositories", "{{repositoryId}}", "data-sources", "{{dataSourceId}}", "history"],
               "query": [
                 {
                   "key": "offset",
@@ -1073,7 +1131,7 @@
                 }
               ]
             },
-            "description": "Gets paginated change history for a data source. Shows all modifications made to the data source including name, type, and configuration changes with user attribution and timestamps. For private repositories, requires explicit permission or workspace owner/admin access. Uses CASL 'read' ability on Repository subject."
+            "description": "Gets paginated change history for a data source. Shows all modifications made to the data source including name and configuration changes with user attribution and timestamps."
           },
           "response": []
         }

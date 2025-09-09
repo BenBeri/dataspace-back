@@ -5,12 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  OneToOne,
+  OneToMany,
   JoinColumn,
   Unique,
 } from 'typeorm';
 import { Workspace } from '../workspace/workspace.entity';
 import { DataSource } from './data-source.entity';
+import { DataSourceType } from '../enums/data-source-type.enum';
 
 @Entity('repositories')
 @Unique(['workspaceId', 'repositoryNameKey'])
@@ -27,6 +28,12 @@ export class Repository {
   @Column()
   description: string;
 
+  @Column({
+    type: 'enum',
+    enum: DataSourceType,
+  })
+  type: DataSourceType;
+
   @Column()
   workspaceId: string;
 
@@ -37,8 +44,8 @@ export class Repository {
   @JoinColumn({ name: 'workspaceId' })
   workspace: Workspace;
 
-  @OneToOne(() => DataSource, (dataSource) => dataSource.repository)
-  dataSource: DataSource;
+  @OneToMany(() => DataSource, (dataSource) => dataSource.repository)
+  dataSources: DataSource[];
 
   @CreateDateColumn()
   createdAt: Date;

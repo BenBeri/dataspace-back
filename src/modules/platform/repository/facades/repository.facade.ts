@@ -8,7 +8,6 @@ import { DataSourceChangeHistory } from '../../entities/repository/data-source-c
 import { CreateRepositoryRequestDto } from '../dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from '../dto/update-repository-request.dto';
 import { UpdateDataSourceRequestDto } from '../dto/update-data-source-request.dto';
-import { DataSourceType } from '../../entities/enums/data-source-type.enum';
 
 @Injectable()
 export class RepositoryFacade {
@@ -27,15 +26,18 @@ export class RepositoryFacade {
     // Create the repository first
     const repository = await this.repositoryService.createRepository(createRepositoryDto, workspaceId);
     
-    // Create the associated data source
-    await this.createDataSourceInternal(
-      repository.id,
-      createRepositoryDto.dataSource.dataSourceName,
-      createRepositoryDto.dataSource.dataSourceType,
-      createRepositoryDto.dataSource.configuration,
-      userId,
-      workspaceId,
-    );
+    // Create data sources if provided
+    if (createRepositoryDto.dataSources && createRepositoryDto.dataSources.length > 0) {
+      for (const dataSourceDto of createRepositoryDto.dataSources) {
+        await this.dataSourceService.createDataSource(
+          repository.id,
+          dataSourceDto.name,
+          dataSourceDto.configuration,
+          userId,
+          workspaceId,
+        );
+      }
+    }
     
     return repository;
   }
@@ -49,7 +51,7 @@ export class RepositoryFacade {
   }
 
   async deleteRepository(id: string, userId: string): Promise<void> {
-    // Delete associated data source first (if exists)
+    // Delete all associated data sources first
     await this.dataSourceService.deleteDataSourceByRepositoryId(id, userId);
     
     // Then delete the repository
@@ -60,45 +62,63 @@ export class RepositoryFacade {
     return await this.repositoryService.getRepositoryById(id);
   }
 
-  // Data Source Management (Internal)
-  private async createDataSourceInternal(
-    repositoryId: string,
-    name: string,
-    type: DataSourceType,
-    configuration: Record<string, any>,
-    userId: string,
+  // Data Source Management (Public)
+  async createDataSource(
     workspaceId: string,
+    repositoryId: string,
+    createDataSourceDto: { name: string; configuration: Record<string, any> },
+    userId: string,
   ): Promise<DataSource> {
+    // Verify repository exists and belongs to workspace
+    const repository = await this.repositoryService.getRepositoryById(repositoryId);
+    if (repository.workspaceId !== workspaceId) {
+      throw new NotFoundException('Repository not found in the specified workspace');
+    }
+    
     return await this.dataSourceService.createDataSource(
       repositoryId,
-      name,
-      type,
-      configuration,
+      createDataSourceDto.name,
+      createDataSourceDto.configuration,
       userId,
       workspaceId,
     );
   }
 
+  async getDataSourcesByRepositoryId(repositoryId: string): Promise<DataSource[]> {
+    // Verify repository exists
+    await this.repositoryService.getRepositoryById(repositoryId);
+    
+    return await this.dataSourceService.getDataSourcesByRepositoryId(repositoryId);
+  }
+
+  async getDataSourceById(repositoryId: string, dataSourceId: string): Promise<DataSource> {
+    // Verify repository exists
+    await this.repositoryService.getRepositoryById(repositoryId);
+    
+    return await this.dataSourceService.getDataSourceByIdAndRepositoryId(dataSourceId, repositoryId);
+  }
+
   async updateDataSource(
+    workspaceId: string,
     repositoryId: string,
     dataSourceId: string,
     updateDataSourceDto: UpdateDataSourceRequestDto,
     userId: string,
   ): Promise<DataSource> {
-    // Verify repository exists and get workspace ID
+    // Verify repository exists and belongs to workspace
     const repository = await this.repositoryService.getRepositoryById(repositoryId);
+    if (repository.workspaceId !== workspaceId) {
+      throw new NotFoundException('Repository not found in the specified workspace');
+    }
     
     // Verify data source belongs to this repository
-    const dataSource = await this.dataSourceService.getDataSourceById(dataSourceId);
-    if (dataSource.repositoryId !== repositoryId) {
-      throw new NotFoundException('Data source not found for this repository');
-    }
+    await this.dataSourceService.getDataSourceByIdAndRepositoryId(dataSourceId, repositoryId);
     
     return await this.dataSourceService.updateDataSource(
       dataSourceId,
       updateDataSourceDto,
       userId,
-      repository.workspaceId,
+      workspaceId,
     );
   }
 
@@ -106,11 +126,8 @@ export class RepositoryFacade {
     return await this.dataSourceService.getDataSourceByRepositoryId(repositoryId);
   }
 
-  async getDataSourceConfiguration(repositoryId: string): Promise<Record<string, any> | null> {
-    // Verify repository exists
-    await this.repositoryService.getRepositoryById(repositoryId);
-    
-    return await this.dataSourceService.getDecryptedConfiguration(repositoryId);
+  async getDataSourceConfiguration(dataSourceId: string): Promise<Record<string, any> | null> {
+    return await this.dataSourceService.getDecryptedConfigurationById(dataSourceId);
   }
 
   async deleteDataSource(
@@ -119,10 +136,7 @@ export class RepositoryFacade {
     userId: string,
   ): Promise<void> {
     // Verify data source belongs to this repository
-    const dataSource = await this.dataSourceService.getDataSourceById(dataSourceId);
-    if (dataSource.repositoryId !== repositoryId) {
-      throw new NotFoundException('Data source not found for this repository');
-    }
+    await this.dataSourceService.getDataSourceByIdAndRepositoryId(dataSourceId, repositoryId);
     
     await this.dataSourceService.deleteDataSource(dataSourceId, userId);
   }
@@ -133,10 +147,7 @@ export class RepositoryFacade {
     dataSourceId: string,
   ): Promise<DataSourceChangeHistory[]> {
     // Verify data source belongs to this repository
-    const dataSource = await this.dataSourceService.getDataSourceById(dataSourceId);
-    if (dataSource.repositoryId !== repositoryId) {
-      throw new NotFoundException('Data source not found for this repository');
-    }
+    await this.dataSourceService.getDataSourceByIdAndRepositoryId(dataSourceId, repositoryId);
     
     return await this.changeHistoryService.getChangeHistoryByDataSourceId(dataSourceId);
   }
@@ -148,10 +159,7 @@ export class RepositoryFacade {
     take: number,
   ): Promise<[DataSourceChangeHistory[], number]> {
     // Verify data source belongs to this repository
-    const dataSource = await this.dataSourceService.getDataSourceById(dataSourceId);
-    if (dataSource.repositoryId !== repositoryId) {
-      throw new NotFoundException('Data source not found for this repository');
-    }
+    await this.dataSourceService.getDataSourceByIdAndRepositoryId(dataSourceId, repositoryId);
     
     return await this.changeHistoryService.getChangeHistoryByDataSourceIdPaginated(
       dataSourceId,

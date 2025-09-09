@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, BadRequestException, Inject } from '@nes
 import { DataSource } from '../../entities/repository/data-source.entity';
 import { DataSourceRepository } from '../repositories/data-source.repository';
 import { DataSourceChangeHistoryService } from './data-source-change-history.service';
-import { DataSourceType } from '../../entities/enums/data-source-type.enum';
 import type { IKeyManagementService } from '../../key-management/interfaces/key-management.interface';
 import { KEY_MANAGEMENT_SERVICE } from '../../key-management/key-management.module';
 import { WorkspaceService } from '../../workspace/services/workspace.service';
@@ -49,22 +48,14 @@ export class DataSourceService {
   async createDataSource(
     repositoryId: string,
     name: string,
-    type: DataSourceType,
     configuration: Record<string, any>,
     userId: string,
     workspaceId: string,
   ): Promise<DataSource> {
-    // Check if data source already exists for this repository
-    const existingDataSource = await this.dataSourceRepository.findByRepositoryId(repositoryId);
-    if (existingDataSource) {
-      throw new BadRequestException('Data source already exists for this repository');
-    }
-
     const encryptedConfiguration = await this.encryptConfiguration(workspaceId, configuration);
 
     const dataSourceData = {
       name,
-      type,
       encryptedConfiguration,
       repositoryId,
     };
@@ -76,7 +67,6 @@ export class DataSourceService {
       dataSourceId: dataSource.id,
       userId,
       newName: name,
-      newType: type,
       configurationChanged: true,
       changeDescription: 'Data source created',
     });
@@ -98,11 +88,34 @@ export class DataSourceService {
     return await this.dataSourceRepository.findByRepositoryId(repositoryId);
   }
 
+  async getDataSourcesByRepositoryId(repositoryId: string): Promise<DataSource[]> {
+    return await this.dataSourceRepository.findAllByRepositoryId(repositoryId);
+  }
+
+  async getDataSourceByIdAndRepositoryId(id: string, repositoryId: string): Promise<DataSource> {
+    const dataSource = await this.dataSourceRepository.findByIdAndRepositoryId(id, repositoryId);
+    
+    if (!dataSource) {
+      throw new NotFoundException(`Data source with ID ${id} not found for repository ${repositoryId}`);
+    }
+    
+    return dataSource;
+  }
+
+  async getDecryptedConfigurationById(dataSourceId: string): Promise<Record<string, any> | null> {
+    const dataSource = await this.dataSourceRepository.findById(dataSourceId);
+    
+    if (!dataSource) {
+      return null;
+    }
+
+    return await this.decryptConfiguration(dataSource.encryptedConfiguration);
+  }
+
   async updateDataSource(
     id: string,
     updates: {
       name?: string;
-      type?: DataSourceType;
       configuration?: Record<string, any>;
     },
     userId: string,
@@ -126,12 +139,6 @@ export class DataSourceService {
       changes.push('name');
     }
     
-    if (updates.type !== undefined && updates.type !== dataSource.type) {
-      changeData.previousType = dataSource.type;
-      changeData.newType = updates.type;
-      changes.push('type');
-    }
-    
     let updatedData: any = {};
     
     if (updates.configuration !== undefined) {
@@ -148,10 +155,6 @@ export class DataSourceService {
     
     if (updates.name !== undefined) {
       updatedData.name = updates.name;
-    }
-    
-    if (updates.type !== undefined) {
-      updatedData.type = updates.type;
     }
 
     // Only proceed if there are actual changes
@@ -180,9 +183,9 @@ export class DataSourceService {
   }
 
   async deleteDataSourceByRepositoryId(repositoryId: string, userId: string): Promise<void> {
-    const dataSource = await this.dataSourceRepository.findByRepositoryId(repositoryId);
+    const dataSources = await this.dataSourceRepository.findAllByRepositoryId(repositoryId);
     
-    if (dataSource) {
+    for (const dataSource of dataSources) {
       await this.deleteDataSource(dataSource.id, userId);
     }
   }

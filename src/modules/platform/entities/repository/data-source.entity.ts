@@ -4,12 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
+  ManyToOne,
   OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { Repository } from './repository.entity';
-import { DataSourceType } from '../enums/data-source-type.enum';
 import { DataSourceChangeHistory } from './data-source-change-history.entity';
 
 @Entity('data_sources')
@@ -20,19 +19,13 @@ export class DataSource {
   @Column()
   name: string;
 
-  @Column({
-    type: 'enum',
-    enum: DataSourceType,
-  })
-  type: DataSourceType;
-
   @Column('text')
   encryptedConfiguration: string;
 
   @Column()
   repositoryId: string;
 
-  @OneToOne(() => Repository, (repository) => repository.dataSource)
+  @ManyToOne(() => Repository, (repository) => repository.dataSources)
   @JoinColumn({ name: 'repositoryId' })
   repository: Repository;
 
