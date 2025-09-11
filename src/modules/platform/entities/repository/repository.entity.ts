@@ -12,18 +12,16 @@ import {
 import { Workspace } from '../workspace/workspace.entity';
 import { DataSource } from './data-source.entity';
 import { DataSourceType } from '../enums/data-source-type.enum';
+import { KeyNameEntity } from '../base/key-name.entity';
 
 @Entity('repositories')
-@Unique(['workspaceId', 'repositoryNameKey'])
-export class Repository {
+@Unique(['workspaceId', 'nameKey'])
+export class Repository extends KeyNameEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   name: string;
-
-  @Column({ length: 32 })
-  repositoryNameKey: string;
 
   @Column()
   description: string;

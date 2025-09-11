@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class WorkspaceKeyHelper {
+export class EntityKeyNameHelper {
   /**
-   * Transforms a workspace name into a valid key format
+   * Transforms a name into a valid key format
    * - Converts to lowercase
    * - Replaces spaces and special characters with dashes
    * - Removes consecutive dashes
@@ -78,10 +78,46 @@ export class WorkspaceKeyHelper {
   }
 
   /**
-   * Generates a unique workspace key with collision handling
-   * @param name The workspace name to generate key from
+   * Generates a unique entity key with collision handling using database checks
+   * @param name The entity name to generate key from
+   * @param keyAvailabilityCheck Function that checks if a key exists in the database
+   * @returns A unique entity key
+   */
+  static async generateUniqueKeyAsync(
+    name: string,
+    keyAvailabilityCheck: (key: string) => Promise<boolean>
+  ): Promise<string> {
+    const baseKey = this.generateKeyFromName(name);
+    
+    // If base key doesn't exist, return it
+    if (!(await keyAvailabilityCheck(baseKey))) {
+      return baseKey;
+    }
+
+    // Generate unique key with random suffix
+    let uniqueKey: string;
+    let attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loop
+
+    do {
+      const suffix = this.generateRandomSuffix();
+      uniqueKey = `${baseKey}-${suffix}`;
+      attempts++;
+      
+      if (attempts >= maxAttempts) {
+        throw new Error('Unable to generate unique entity key after maximum attempts');
+      }
+    } while (await keyAvailabilityCheck(uniqueKey));
+
+    return uniqueKey;
+  }
+
+  /**
+   * @deprecated Use generateUniqueKeyAsync instead for better performance
+   * Generates a unique entity key with collision handling
+   * @param name The entity name to generate key from
    * @param existingKeys Array of existing keys to check against
-   * @returns A unique workspace key
+   * @returns A unique entity key
    */
   static generateUniqueKey(name: string, existingKeys: string[]): string {
     const baseKey = this.generateKeyFromName(name);
@@ -102,7 +138,7 @@ export class WorkspaceKeyHelper {
       attempts++;
       
       if (attempts >= maxAttempts) {
-        throw new Error('Unable to generate unique workspace key after maximum attempts');
+        throw new Error('Unable to generate unique entity key after maximum attempts');
       }
     } while (existingKeys.includes(uniqueKey));
 

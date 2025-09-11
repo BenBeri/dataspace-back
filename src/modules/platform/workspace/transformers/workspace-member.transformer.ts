@@ -41,7 +41,7 @@ export class WorkspaceMemberTransformer {
 
     const responseDto = new MyWorkspaceResponseDto();
     responseDto.workspaceId = workspaceMember.workspaceId;
-    responseDto.nameKey = workspaceMember.workspace.name_key;
+    responseDto.nameKey = workspaceMember.workspace.nameKey;
     responseDto.ownerUserId = workspaceMember.workspace.ownerUserId;
     responseDto.role = {
       name: workspaceMember.role.name,

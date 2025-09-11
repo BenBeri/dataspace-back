@@ -5,7 +5,7 @@ import { WorkspaceTransformer } from '../transformers/workspace.transformer';
 import { CreateWorkspaceRequestDto } from '../dto/create-workspace-request.dto';
 import { UpdateWorkspaceRequestDto } from '../dto/update-workspace-request.dto';
 import { TransactionManagerService } from '../../shared/services/transaction-manager.service';
-import { WorkspaceKeyHelper } from '../helpers/workspace-key.helper';
+import { EntityKeyNameHelper } from '../../shared/helpers/entity-key-name.helper';
 
 @Injectable()
 export class WorkspaceService {
@@ -26,11 +26,11 @@ export class WorkspaceService {
     createWorkspaceDto: CreateWorkspaceRequestDto, 
     ownerUserId: string
   ): Promise<Workspace> {
-    // Get all existing workspace keys to avoid collisions
-    const existingKeys = await this.workspaceRepository.getAllNameKeys();
-    
-    // Generate a unique workspace key
-    const uniqueNameKey = WorkspaceKeyHelper.generateUniqueKey(createWorkspaceDto.name, existingKeys);
+    // Generate a unique workspace key using efficient database checks
+    const uniqueNameKey = await EntityKeyNameHelper.generateUniqueKeyAsync(
+      createWorkspaceDto.name,
+      (key: string) => this.workspaceRepository.keyExists(key)
+    );
     
     // Create workspace data with the unique key
     const workspaceData = WorkspaceTransformer.createRequestDtoToEntity(createWorkspaceDto, ownerUserId, uniqueNameKey);
@@ -120,7 +120,7 @@ export class WorkspaceService {
   async getWorkspaceByNameKey(nameKey: string): Promise<Workspace> {
     const repository = this.transactionManager.getRepository(Workspace);
     const workspace = await repository.findOne({ 
-      where: { name_key: nameKey }
+      where: { nameKey }
     });
     
     if (!workspace) {

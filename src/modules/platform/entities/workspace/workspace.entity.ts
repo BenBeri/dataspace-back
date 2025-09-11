@@ -11,17 +11,15 @@ import {
 import { User } from '../user/user.entity';
 import { Repository } from '../repository/repository.entity';
 import { WorkspaceMember } from './workspace-member.entity';
+import { KeyNameEntity } from '../base/key-name.entity';
 
 @Entity('workspaces')
-export class Workspace {
+export class Workspace extends KeyNameEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   name: string;
-
-  @Column({ length: 32, unique: true })
-  name_key: string;
 
   @Column()
   ownerUserId: string;

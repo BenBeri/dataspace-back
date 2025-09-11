@@ -4,14 +4,14 @@ import { CreateRepositoryRequestDto } from '../dto/create-repository-request.dto
 import { UpdateRepositoryRequestDto } from '../dto/update-repository-request.dto';
 import { WorkspaceTransformer } from '../../workspace/transformers/workspace.transformer';
 import { DataSourceTransformer } from './data-source.transformer';
-import { RepositoryKeyHelper } from '../helpers/repository-key.helper';
+import { EntityKeyNameHelper } from '../../shared/helpers/entity-key-name.helper';
 
 export class RepositoryTransformer {
   static toResponseDto(repository: Repository): RepositoryResponseDto {
     const responseDto = new RepositoryResponseDto();
     responseDto.id = repository.id;
     responseDto.name = repository.name;
-    responseDto.repositoryNameKey = repository.repositoryNameKey;
+    responseDto.repositoryNameKey = repository.nameKey; // Map nameKey to repositoryNameKey for client compatibility
     responseDto.description = repository.description;
     responseDto.type = repository.type;
     responseDto.workspaceId = repository.workspaceId;
@@ -36,18 +36,16 @@ export class RepositoryTransformer {
   static createRequestDtoToEntity(
     dto: CreateRepositoryRequestDto,
     workspaceId: string,
+    nameKey: string,
   ): Partial<Repository> {
-    // Generate repositoryNameKey from name if not provided
-    const repositoryNameKey = dto.repositoryNameKey || RepositoryKeyHelper.generateKeyFromName(dto.name);
-    
-    // Validate the final key (whether provided or generated)
-    if (!RepositoryKeyHelper.isValidKey(repositoryNameKey)) {
-      throw new Error(`Invalid repository key: ${repositoryNameKey}`);
+    // Validate the provided unique key
+    if (!EntityKeyNameHelper.isValidKey(nameKey)) {
+      throw new Error(`Invalid repository key: ${nameKey}`);
     }
 
     return {
       name: dto.name,
-      repositoryNameKey: repositoryNameKey,
+      nameKey: nameKey,
       description: dto.description,
       type: dto.type,
       workspaceId: workspaceId,
@@ -63,13 +61,7 @@ export class RepositoryTransformer {
       updates.name = dto.name;
     }
     
-    if (dto.repositoryNameKey !== undefined) {
-      // Validate provided key
-      if (!RepositoryKeyHelper.isValidKey(dto.repositoryNameKey)) {
-        throw new Error(`Invalid repository key: ${dto.repositoryNameKey}`);
-      }
-      updates.repositoryNameKey = dto.repositoryNameKey;
-    }
+    // Note: nameKey is not updatable - it's set automatically during creation
     
     if (dto.description !== undefined) {
       updates.description = dto.description;
