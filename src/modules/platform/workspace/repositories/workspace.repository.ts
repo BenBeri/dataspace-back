@@ -15,13 +15,14 @@ export class WorkspaceRepository {
   }
 
   /**
-   * Gets all existing workspace name keys
-   * @returns Array of workspace name keys
+   * Checks if a workspace key exists
+   * @param nameKey The workspace name key to check
+   * @returns Boolean indicating if the key exists
    */
-  async getAllNameKeys(): Promise<string[]> {
-    const workspaces = await this.typeormRepository.find({
-      select: ['name_key'],
+  async keyExists(nameKey: string): Promise<boolean> {
+    const count = await this.typeormRepository.count({
+      where: { nameKey },
     });
-    return workspaces.map(workspace => workspace.name_key);
+    return count > 0;
   }
 }

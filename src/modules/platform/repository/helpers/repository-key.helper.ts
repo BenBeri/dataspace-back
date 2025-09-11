@@ -67,5 +67,81 @@ export class RepositoryKeyHelper {
         }
 
         return true;
+  }
+
+  /**
+   * Generates a random 4-digit number string with leading zeros
+   */
+  static generateRandomSuffix(): string {
+    const randomNum = Math.floor(Math.random() * 10000);
+    return randomNum.toString().padStart(4, '0');
+  }
+
+  /**
+   * Generates a unique repository key with collision handling using database checks
+   * @param name The repository name to generate key from
+   * @param keyAvailabilityCheck Function that checks if a key exists in the database
+   * @returns A unique repository key
+   */
+  static async generateUniqueKeyAsync(
+    name: string,
+    keyAvailabilityCheck: (key: string) => Promise<boolean>
+  ): Promise<string> {
+    const baseKey = this.generateKeyFromName(name);
+    
+    // If base key doesn't exist, return it
+    if (!(await keyAvailabilityCheck(baseKey))) {
+      return baseKey;
     }
+
+    // Generate unique key with random suffix
+    let uniqueKey: string;
+    let attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loop
+
+    do {
+      const suffix = this.generateRandomSuffix();
+      uniqueKey = `${baseKey}-${suffix}`;
+      attempts++;
+      
+      if (attempts >= maxAttempts) {
+        throw new Error('Unable to generate unique repository key after maximum attempts');
+      }
+    } while (await keyAvailabilityCheck(uniqueKey));
+
+    return uniqueKey;
+  }
+
+  /**
+   * @deprecated Use generateUniqueKeyAsync instead for better performance
+   * Generates a unique repository key with collision handling
+   * @param name The repository name to generate key from
+   * @param existingKeys Array of existing keys to check against
+   * @returns A unique repository key
+   */
+  static generateUniqueKey(name: string, existingKeys: string[]): string {
+    const baseKey = this.generateKeyFromName(name);
+    
+    // If base key doesn't exist, return it
+    if (!existingKeys.includes(baseKey)) {
+      return baseKey;
+    }
+
+    // Generate unique key with random suffix
+    let uniqueKey: string;
+    let attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loop
+
+    do {
+      const suffix = this.generateRandomSuffix();
+      uniqueKey = `${baseKey}-${suffix}`;
+      attempts++;
+      
+      if (attempts >= maxAttempts) {
+        throw new Error('Unable to generate unique repository key after maximum attempts');
+      }
+    } while (existingKeys.includes(uniqueKey));
+
+    return uniqueKey;
+  }
 }

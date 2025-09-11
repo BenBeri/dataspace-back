@@ -2,14 +2,14 @@ import { Workspace } from '../../entities/workspace/workspace.entity';
 import { CreateWorkspaceRequestDto } from '../dto/create-workspace-request.dto';
 import { UpdateWorkspaceRequestDto } from '../dto/update-workspace-request.dto';
 import { WorkspaceResponseDto } from '../dto/workspace-response.dto';
-import { WorkspaceKeyHelper } from '../helpers/workspace-key.helper';
+import { EntityKeyNameHelper } from '../../shared/helpers/entity-key-name.helper';
 
 export class WorkspaceTransformer {
   static toResponseDto(workspace: Workspace): WorkspaceResponseDto {
     const responseDto = new WorkspaceResponseDto();
     responseDto.id = workspace.id;
     responseDto.name = workspace.name;
-    responseDto.name_key = workspace.name_key;
+    responseDto.name_key = workspace.nameKey; // Map nameKey to name_key for client compatibility
     responseDto.ownerUserId = workspace.ownerUserId;
     responseDto.description = workspace.description;
     responseDto.createdAt = workspace.createdAt;
@@ -23,13 +23,13 @@ export class WorkspaceTransformer {
 
   static createRequestDtoToEntity(dto: CreateWorkspaceRequestDto, ownerUserId: string, nameKey: string): Partial<Workspace> {
     // Validate the provided key
-    if (!WorkspaceKeyHelper.isValidKey(nameKey)) {
+    if (!EntityKeyNameHelper.isValidKey(nameKey)) {
       throw new Error(`Invalid workspace key: ${nameKey}`);
     }
 
     return {
       name: dto.name,
-      name_key: nameKey,
+      nameKey: nameKey,
       ownerUserId: ownerUserId,
       description: dto.description,
     };

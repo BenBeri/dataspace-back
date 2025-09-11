@@ -140,7 +140,7 @@ export class WorkspaceProvider {
                 const logoUrl = await this.workspaceMediaFacade.getWorkspaceLogoUrl(workspace.id);
                 return {
                     workspaceId: workspace.id,
-                    nameKey: workspace.name_key,
+                    nameKey: workspace.nameKey,
                     ownerUserId: workspace.ownerUserId,
                     role: {
                         name: 'Owner',

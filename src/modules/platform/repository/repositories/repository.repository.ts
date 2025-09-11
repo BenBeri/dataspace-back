@@ -118,4 +118,11 @@ export class RepositoryRepository {
       relations: ['workspace', 'dataSources'],
     });
   }
+
+  async keyExists(nameKey: string): Promise<boolean> {
+    const count = await this.repository.count({
+      where: { nameKey },
+    });
+    return count > 0;
+  }
 }
