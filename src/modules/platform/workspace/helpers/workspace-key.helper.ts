@@ -68,4 +68,44 @@ export class WorkspaceKeyHelper {
 
     return true;
   }
+
+  /**
+   * Generates a random 4-digit number string with leading zeros
+   */
+  static generateRandomSuffix(): string {
+    const randomNum = Math.floor(Math.random() * 10000);
+    return randomNum.toString().padStart(4, '0');
+  }
+
+  /**
+   * Generates a unique workspace key with collision handling
+   * @param name The workspace name to generate key from
+   * @param existingKeys Array of existing keys to check against
+   * @returns A unique workspace key
+   */
+  static generateUniqueKey(name: string, existingKeys: string[]): string {
+    const baseKey = this.generateKeyFromName(name);
+    
+    // If base key doesn't exist, return it
+    if (!existingKeys.includes(baseKey)) {
+      return baseKey;
+    }
+
+    // Generate unique key with random suffix
+    let uniqueKey: string;
+    let attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loop
+
+    do {
+      const suffix = this.generateRandomSuffix();
+      uniqueKey = `${baseKey}-${suffix}`;
+      attempts++;
+      
+      if (attempts >= maxAttempts) {
+        throw new Error('Unable to generate unique workspace key after maximum attempts');
+      }
+    } while (existingKeys.includes(uniqueKey));
+
+    return uniqueKey;
+  }
 }

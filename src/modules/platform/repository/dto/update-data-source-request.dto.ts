@@ -5,6 +5,7 @@ export class UpdateDataSourceRequestDto {
   @IsOptional()
   name?: string;
 
+
   @IsObject()
   @IsOptional()
   configuration?: Record<string, any>;

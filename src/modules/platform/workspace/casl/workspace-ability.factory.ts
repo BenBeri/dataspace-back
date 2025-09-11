@@ -4,9 +4,9 @@ import { Repository } from '../../entities/repository/repository.entity';
 import { Workspace } from '../../entities/workspace/workspace.entity';
 import { User } from '../../entities/user/user.entity';
 import { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
-import { WorkspaceManagementPermission } from '../enums/workspace-management-permission.enum';
-import { RepositoryPermission } from '../enums/repository-permission.enum';
-import { UserPermission } from '../enums/user-permission.enum';
+import { WorkspaceManagementPermission } from './permissions/workspace-management-permission.enum';
+import { RepositoryPermission } from './permissions/repository-permission.enum';
+import { UserPermission } from './permissions/user-permission.enum';
 
 // Define all subjects that can have permissions applied
 type Subjects = InferSubjects<typeof Repository | typeof Workspace | typeof User> | 'all';

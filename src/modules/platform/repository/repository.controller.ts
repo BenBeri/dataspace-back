@@ -31,8 +31,8 @@ import { RepositoryGuard } from './guards/repository.guard';
 import { WorkspaceGuard } from '../workspace/guards/workspace.guard';
 import { Repository } from '../entities/repository/repository.entity';
 import { Workspace } from '../entities/workspace/workspace.entity';
-import { RepositoryPermission } from '../workspace/enums/repository-permission.enum';
-import { WorkspaceManagementPermission } from '../workspace/enums/workspace-management-permission.enum';
+import { RepositoryPermission } from '../workspace/casl/permissions/repository-permission.enum';
+import { WorkspaceManagementPermission } from '../workspace/casl/permissions/workspace-management-permission.enum';
 
 @Controller('workspaces/:workspaceId/repositories')
 export class RepositoryController {

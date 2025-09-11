@@ -12,8 +12,9 @@ export class WorkspaceMediaFacade {
    * @param workspaceId - The workspace ID
    * @param logoBuffer - The logo image buffer
    * @param mimeType - The MIME type of the image
+   * @returns The signed URL for the uploaded logo
    */
-  async setWorkspaceLogo(workspaceId: string, logoBuffer: Buffer, mimeType: string): Promise<void> {
+  async setWorkspaceLogo(workspaceId: string, logoBuffer: Buffer, mimeType: string): Promise<string> {
     // Validate image type
     const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
     if (!allowedMimeTypes.includes(mimeType.toLowerCase())) {
@@ -33,6 +34,14 @@ export class WorkspaceMediaFacade {
     try {
       await this.s3Service.uploadFile(logoKey, logoBuffer, mimeType);
       this.logger.log(`Successfully uploaded logo for workspace ${workspaceId}`);
+      
+      // Get the signed URL for the uploaded logo
+      const logoUrl = await this.getWorkspaceLogoUrl(workspaceId);
+      if (!logoUrl) {
+        throw new Error('Failed to generate logo URL after upload');
+      }
+      
+      return logoUrl;
     } catch (error) {
       this.logger.error(`Failed to upload logo for workspace ${workspaceId}: ${error.message}`);
       throw new Error(`Failed to upload workspace logo: ${error.message}`);

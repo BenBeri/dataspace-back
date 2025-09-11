@@ -21,11 +21,8 @@ export class WorkspaceTransformer {
     return workspaces.map(workspace => this.toResponseDto(workspace));
   }
 
-  static createRequestDtoToEntity(dto: CreateWorkspaceRequestDto, ownerUserId: string): Partial<Workspace> {
-    // Generate name_key from name if not provided
-    const nameKey = dto.name_key || WorkspaceKeyHelper.generateKeyFromName(dto.name);
-    
-    // Validate the final key (whether provided or generated)
+  static createRequestDtoToEntity(dto: CreateWorkspaceRequestDto, ownerUserId: string, nameKey: string): Partial<Workspace> {
+    // Validate the provided key
     if (!WorkspaceKeyHelper.isValidKey(nameKey)) {
       throw new Error(`Invalid workspace key: ${nameKey}`);
     }
@@ -42,15 +39,6 @@ export class WorkspaceTransformer {
     const entityData: Partial<Workspace> = {};
     
     if (dto.name !== undefined) entityData.name = dto.name;
-    
-    if (dto.name_key !== undefined) {
-      // Validate provided key
-      if (!WorkspaceKeyHelper.isValidKey(dto.name_key)) {
-        throw new Error(`Invalid workspace key: ${dto.name_key}`);
-      }
-      entityData.name_key = dto.name_key;
-    }
-    
     if (dto.description !== undefined) entityData.description = dto.description;
     
     return entityData;

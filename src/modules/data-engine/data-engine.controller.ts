@@ -31,8 +31,8 @@ import { UserSession } from '../platform/auth/models/user-session.model';
 import { CheckAbility } from '../platform/workspace/casl/decorators/check-ability.decorator';
 import { RepositoryGuard } from '../platform/repository/guards/repository.guard';
 import { WorkspaceGuard } from '../platform/workspace/guards/workspace.guard';
-import { RepositoryPermission } from '../platform/workspace/enums/repository-permission.enum';
-import { WorkspaceManagementPermission } from '../platform/workspace/enums/workspace-management-permission.enum';
+import { RepositoryPermission } from '../platform/workspace/casl/permissions/repository-permission.enum';
+import { WorkspaceManagementPermission } from '../platform/workspace/casl/permissions/workspace-management-permission.enum';
 
 /**
  * Data Engine Controller

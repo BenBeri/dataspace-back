@@ -29,7 +29,7 @@ import { UserSession } from '../../auth/models/user-session.model';
 import { WorkspaceGuard } from '../guards/workspace.guard';
 import { CheckAbility } from '../casl/decorators/check-ability.decorator';
 import { Workspace } from '../../entities/workspace/workspace.entity';
-import { WorkspaceManagementPermission } from '../enums/workspace-management-permission.enum';
+import { WorkspaceManagementPermission } from '../casl/permissions/workspace-management-permission.enum';
 
 @Controller('workspaces')
 export class WorkspaceController {
@@ -57,6 +57,11 @@ export class WorkspaceController {
   @Get(':id')
   async getWorkspaceById(@Param('id', ParseUUIDPipe) id: string): Promise<WorkspaceResponseDto> {
     return await this.workspaceProvider.getWorkspaceById(id);
+  }
+
+  @Get('by-key-name/:nameKey')
+  async getWorkspaceByNameKey(@Param('nameKey') nameKey: string): Promise<WorkspaceResponseDto> {
+    return await this.workspaceProvider.getWorkspaceByNameKey(nameKey);
   }
 
   @Patch(':id')
@@ -126,13 +131,13 @@ export class WorkspaceController {
     @Param('id', ParseUUIDPipe) workspaceId: string,
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() userSession: UserSession,
-  ): Promise<{ message: string }> {
+  ): Promise<{ url: string }> {
     if (!file) {
       throw new BadRequestException('Logo file is required');
     }
 
-    await this.workspaceProvider.setWorkspaceLogo(workspaceId, file.buffer, file.mimetype);
-    return { message: 'Workspace logo uploaded successfully' };
+    const logoUrl = await this.workspaceProvider.setWorkspaceLogo(workspaceId, file.buffer, file.mimetype);
+    return { url: logoUrl };
   }
 
   @Delete(':id/logo')

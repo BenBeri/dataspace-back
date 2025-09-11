@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { Workspace } from '../../entities/workspace/workspace.entity';
 import { WorkspaceRepository } from '../repositories/workspace.repository';
 import { WorkspaceTransformer } from '../transformers/workspace.transformer';
 import { CreateWorkspaceRequestDto } from '../dto/create-workspace-request.dto';
 import { UpdateWorkspaceRequestDto } from '../dto/update-workspace-request.dto';
-import { QueryFailedError } from 'typeorm';
 import { TransactionManagerService } from '../../shared/services/transaction-manager.service';
+import { WorkspaceKeyHelper } from '../helpers/workspace-key.helper';
 
 @Injectable()
 export class WorkspaceService {
@@ -26,28 +26,20 @@ export class WorkspaceService {
     createWorkspaceDto: CreateWorkspaceRequestDto, 
     ownerUserId: string
   ): Promise<Workspace> {
-    const workspaceData = WorkspaceTransformer.createRequestDtoToEntity(createWorkspaceDto, ownerUserId);
+    // Get all existing workspace keys to avoid collisions
+    const existingKeys = await this.workspaceRepository.getAllNameKeys();
     
-    try {
-      const repository = this.transactionManager.getRepository(Workspace);
-      const workspace = await repository.save(workspaceData);
-      
-      this.logger.log(`Successfully created workspace ${workspace.id}`);
-      return workspace;
-    } catch (error) {
-      if (this.isUniqueConstraintError(error, 'name_key')) {
-        throw new BadRequestException({
-          message: ['Workspace key already exists. Please choose a different key.'],
-          error: 'Bad Request',
-          statusCode: 400,
-          property: 'name_key',
-          constraints: {
-            isUnique: 'Workspace key already exists. Please choose a different key.'
-          }
-        });
-      }
-      throw error;
-    }
+    // Generate a unique workspace key
+    const uniqueNameKey = WorkspaceKeyHelper.generateUniqueKey(createWorkspaceDto.name, existingKeys);
+    
+    // Create workspace data with the unique key
+    const workspaceData = WorkspaceTransformer.createRequestDtoToEntity(createWorkspaceDto, ownerUserId, uniqueNameKey);
+    
+    const repository = this.transactionManager.getRepository(Workspace);
+    const workspace = await repository.save(workspaceData);
+    
+    this.logger.log(`Successfully created workspace ${workspace.id} with key ${uniqueNameKey}`);
+    return workspace;
   }
 
   /**
@@ -88,23 +80,8 @@ export class WorkspaceService {
 
     const updateData = WorkspaceTransformer.updateRequestDtoToEntity(updateWorkspaceDto);
     
-    try {
-      const repository = this.transactionManager.getRepository(Workspace);
-      await repository.update(id, updateData);
-    } catch (error) {
-      if (this.isUniqueConstraintError(error, 'name_key')) {
-        throw new BadRequestException({
-          message: ['Workspace key already exists. Please choose a different key.'],
-          error: 'Bad Request',
-          statusCode: 400,
-          property: 'name_key',
-          constraints: {
-            isUnique: 'Workspace key already exists. Please choose a different key.'
-          }
-        });
-      }
-      throw error;
-    }
+    const repository = this.transactionManager.getRepository(Workspace);
+    await repository.update(id, updateData);
     
     return await this.getWorkspaceById(id);
   }
@@ -136,33 +113,21 @@ export class WorkspaceService {
   }
 
   /**
-   * Checks if the error is a unique constraint violation for a specific column
+   * Gets a workspace by name key without relations
+   * @param nameKey The workspace name key
+   * @returns The workspace without relations
    */
-  private isUniqueConstraintError(error: any, column: string): boolean {
-    if (!(error instanceof QueryFailedError)) {
-      return false;
+  async getWorkspaceByNameKey(nameKey: string): Promise<Workspace> {
+    const repository = this.transactionManager.getRepository(Workspace);
+    const workspace = await repository.findOne({ 
+      where: { name_key: nameKey }
+    });
+    
+    if (!workspace) {
+      throw new NotFoundException(`Workspace with key ${nameKey} not found`);
     }
-
-    // Check for PostgreSQL unique constraint error
-    if (error.driverError?.code === '23505' && error.driverError?.detail?.includes(column)) {
-      return true;
-    }
-
-    // Check for MySQL unique constraint error
-    if (error.driverError?.code === 'ER_DUP_ENTRY' && error.message?.includes(column)) {
-      return true;
-    }
-
-    // Check for SQLite unique constraint error
-    if (error.driverError?.code === 'SQLITE_CONSTRAINT_UNIQUE' && error.message?.includes(column)) {
-      return true;
-    }
-
-    // Generic check for unique constraint message
-    if (error.message?.toLowerCase().includes('unique') && error.message?.includes(column)) {
-      return true;
-    }
-
-    return false;
+    
+    return workspace;
   }
+
 }

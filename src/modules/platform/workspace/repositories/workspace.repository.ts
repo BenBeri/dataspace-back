@@ -13,4 +13,15 @@ export class WorkspaceRepository {
   get repository(): Repository<Workspace> {
     return this.typeormRepository;
   }
+
+  /**
+   * Gets all existing workspace name keys
+   * @returns Array of workspace name keys
+   */
+  async getAllNameKeys(): Promise<string[]> {
+    const workspaces = await this.typeormRepository.find({
+      select: ['name_key'],
+    });
+    return workspaces.map(workspace => workspace.name_key);
+  }
 }

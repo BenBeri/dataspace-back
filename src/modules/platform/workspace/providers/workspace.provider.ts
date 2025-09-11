@@ -94,6 +94,11 @@ export class WorkspaceProvider {
         return await this.enrichWithLogoUrl(WorkspaceTransformer.toResponseDto(workspace));
     }
 
+    async getWorkspaceByNameKey(nameKey: string): Promise<WorkspaceResponseDto> {
+        const workspace = await this.workspaceService.getWorkspaceByNameKey(nameKey);
+        return await this.enrichWithLogoUrl(WorkspaceTransformer.toResponseDto(workspace));
+    }
+
     async updateWorkspace(id: string, updateWorkspaceDto: UpdateWorkspaceRequestDto, currentUserId: string): Promise<WorkspaceResponseDto> {
         const workspace = await this.workspaceService.updateWorkspace(id, updateWorkspaceDto, currentUserId);
         return await this.enrichWithLogoUrl(WorkspaceTransformer.toResponseDto(workspace));
@@ -192,9 +197,10 @@ export class WorkspaceProvider {
      * @param workspaceId - The workspace ID
      * @param logoBuffer - The logo image buffer
      * @param mimeType - The MIME type of the image
+     * @returns The signed URL for the uploaded logo
      */
-    async setWorkspaceLogo(workspaceId: string, logoBuffer: Buffer, mimeType: string): Promise<void> {
-        await this.workspaceMediaFacade.setWorkspaceLogo(workspaceId, logoBuffer, mimeType);
+    async setWorkspaceLogo(workspaceId: string, logoBuffer: Buffer, mimeType: string): Promise<string> {
+        return await this.workspaceMediaFacade.setWorkspaceLogo(workspaceId, logoBuffer, mimeType);
     }
 
     /**
