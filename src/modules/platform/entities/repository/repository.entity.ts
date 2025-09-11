@@ -23,9 +23,6 @@ export class Repository extends KeyNameEntity {
   @Column()
   name: string;
 
-  @Column({ name: 'repositoryNameKey', length: 32 })
-  declare nameKey: string;
-
   @Column()
   description: string;
 

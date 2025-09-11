@@ -21,9 +21,6 @@ export class Workspace extends KeyNameEntity {
   @Column()
   name: string;
 
-  @Column({ name: 'name_key', length: 32, unique: true })
-  declare nameKey: string;
-
   @Column()
   ownerUserId: string;
 
