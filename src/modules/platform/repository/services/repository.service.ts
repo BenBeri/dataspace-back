@@ -41,22 +41,6 @@ export class RepositoryService {
     return repository;
   }
 
-  async getRepositoriesByWorkspace(workspaceId: string): Promise<Repository[]> {
-    return await this.repositoryRepository.findByWorkspaceId(workspaceId);
-  }
-
-  async getRepositoriesByWorkspacePaginated(
-    workspaceId: string,
-    skip: number,
-    take: number,
-  ): Promise<[Repository[], number]> {
-    return await this.repositoryRepository.findByWorkspaceIdPaginated(
-      workspaceId,
-      skip,
-      take,
-    );
-  }
-
   async getRepositoriesByWorkspaceWithSearch(
     workspaceId: string,
     search?: string,
@@ -71,16 +55,7 @@ export class RepositoryService {
     );
   }
 
-  async getAllRepositoriesPaginated(
-    skip: number,
-    take: number,
-  ): Promise<[Repository[], number]> {
-    return await this.repositoryRepository.findAllPaginated(skip, take);
-  }
-
   async updateRepository(id: string, updateRepositoryDto: UpdateRepositoryRequestDto): Promise<Repository> {
-    const repository = await this.getRepositoryById(id);
-    
     const updateData = RepositoryTransformer.updateRequestDtoToEntity(updateRepositoryDto);
     
     try {
@@ -104,18 +79,7 @@ export class RepositoryService {
   }
 
   async deleteRepository(id: string): Promise<void> {
-    const repository = await this.getRepositoryById(id);
     await this.repositoryRepository.delete(id);
-  }
-
-  async repositoryExistsInWorkspace(
-    repositoryId: string,
-    workspaceId: string,
-  ): Promise<boolean> {
-    return await this.repositoryRepository.existsByIdAndWorkspaceId(
-      repositoryId,
-      workspaceId,
-    );
   }
 
   async getRepositoryByIdAndWorkspaceId(
