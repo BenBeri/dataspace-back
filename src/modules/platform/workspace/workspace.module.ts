@@ -22,12 +22,14 @@ import { WorkspaceAbilityFactory } from './casl/workspace-ability.factory';
 import { WorkspaceGuard } from './guards/workspace.guard';
 import { CaslPermissionHelper } from './helpers/casl-permission.helper';
 import { WorkspaceValidationHelper } from './helpers/workspace-validation.helper';
+import { RepositoryModule } from '../repository/repository.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Workspace, Role, WorkspaceMember]), 
+    TypeOrmModule.forFeature([Workspace, Role, WorkspaceMember]),
     KeyManagementModule,
     forwardRef(() => AuthModule),
+    forwardRef(() => RepositoryModule),
   ],
   providers: [
     WorkspaceRepository,

@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { WorkspaceMemberService } from '../../workspace/services/workspace-member.service';
 import { WorkspaceService } from '../../workspace/services/workspace.service';
-import { WorkspaceAbilityFactory, AbilityContext, Action } from '../../workspace/casl/workspace-ability.factory';
+import {
+  WorkspaceAbilityFactory,
+  AbilityContext,
+  Action,
+} from '../../workspace/casl/workspace-ability.factory';
 import { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 
 @Injectable()
@@ -27,10 +31,11 @@ export class CaslPermissionHelper {
 
     if (!isWorkspaceOwner) {
       // Get user's role in the workspace
-      const memberRole = await this.workspaceMemberService.getUserRoleInWorkspace(
-        workspaceId,
-        userId,
-      );
+      const memberRole =
+        await this.workspaceMemberService.getUserRoleInWorkspace(
+          workspaceId,
+          userId,
+        );
 
       if (memberRole?.role?.permissions) {
         permissions = memberRole.role.permissions as WorkspacePermissions;
@@ -53,10 +58,15 @@ export class CaslPermissionHelper {
     workspaceId: string,
     action: Action,
     subject: any,
-    conditions?: any
+    conditions?: any,
   ): Promise<boolean> {
     const context = await this.createAbilityContext(userId, workspaceId);
-    return this.workspaceAbilityFactory.canAccess(context, action, subject, conditions);
+    return await this.workspaceAbilityFactory.canAccess(
+      context,
+      action,
+      subject,
+      conditions,
+    );
   }
 
   /**
@@ -64,7 +74,7 @@ export class CaslPermissionHelper {
    */
   async getAbility(userId: string, workspaceId: string) {
     const context = await this.createAbilityContext(userId, workspaceId);
-    return this.workspaceAbilityFactory.createForUser(context);
+    return await this.workspaceAbilityFactory.createForUser(context);
   }
 
   /**
@@ -80,7 +90,10 @@ export class CaslPermissionHelper {
   /**
    * Check if user is admin in workspace
    */
-  async isWorkspaceAdmin(userId: string, workspaceId: string): Promise<boolean> {
+  async isWorkspaceAdmin(
+    userId: string,
+    workspaceId: string,
+  ): Promise<boolean> {
     const memberRole = await this.getMemberRole(userId, workspaceId);
     return memberRole?.isAdmin === true;
   }
@@ -95,7 +108,11 @@ export class CaslPermissionHelper {
   /**
    * Get ability using cached member role from request
    */
-  async getAbilityFromRequest(request: any, userId: string, workspaceId: string) {
+  async getAbilityFromRequest(
+    request: any,
+    userId: string,
+    workspaceId: string,
+  ) {
     // Use cached member role if available
     const memberRole = request.workspaceMemberRole;
     const isWorkspaceOwner = request.workspace?.ownerUserId === userId;
@@ -113,6 +130,6 @@ export class CaslPermissionHelper {
       permissions,
     };
 
-    return this.workspaceAbilityFactory.createForUser(context);
+    return await this.workspaceAbilityFactory.createForUser(context);
   }
 }

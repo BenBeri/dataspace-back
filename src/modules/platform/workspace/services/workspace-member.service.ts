@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { WorkspaceMember } from '../../entities/workspace/workspace-member.entity';
 import { WorkspaceMemberRepository } from '../repositories/workspace-member.repository';
 import { TransactionManagerService } from '../../shared/services/transaction-manager.service';
@@ -11,15 +16,15 @@ export class WorkspaceMemberService {
   ) {}
 
   async addMemberToWorkspace(
-    workspaceId: string, 
-    userId: string, 
-    roleId: string
+    workspaceId: string,
+    userId: string,
+    roleId: string,
   ): Promise<WorkspaceMember> {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
-    
+
     // Check if user is already a member of this workspace
     const existingMember = await repository.findOne({
-      where: { workspaceId, userId }
+      where: { workspaceId, userId },
     });
 
     if (existingMember) {
@@ -36,7 +41,12 @@ export class WorkspaceMemberService {
     return await repository.save(member);
   }
 
-  async updateMemberRole(workspaceId: string, userId: string, roleId: string, currentUserId: string): Promise<WorkspaceMember> {
+  async updateMemberRole(
+    workspaceId: string,
+    userId: string,
+    roleId: string,
+    currentUserId: string,
+  ): Promise<WorkspaceMember> {
     const member = await this.getMemberByWorkspaceAndUser(workspaceId, userId);
     const repository = this.transactionManager.getRepository(WorkspaceMember);
 
@@ -44,21 +54,27 @@ export class WorkspaceMemberService {
     // where we can access workspace ownership information
 
     await repository.update(member.id, { roleId });
-    
+
     return await this.getMemberByWorkspaceAndUser(workspaceId, userId);
   }
 
-  async removeMemberFromWorkspace(workspaceId: string, userId: string): Promise<void> {
+  async removeMemberFromWorkspace(
+    workspaceId: string,
+    userId: string,
+  ): Promise<void> {
     const member = await this.getMemberByWorkspaceAndUser(workspaceId, userId);
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     await repository.delete(member.id);
   }
 
-  async getMemberByWorkspaceAndUser(workspaceId: string, userId: string): Promise<WorkspaceMember> {
+  async getMemberByWorkspaceAndUser(
+    workspaceId: string,
+    userId: string,
+  ): Promise<WorkspaceMember> {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     const member = await repository.findOne({
       where: { workspaceId, userId },
-      relations: ['user', 'role', 'workspace']
+      relations: ['user', 'role', 'workspace'],
     });
 
     if (!member) {
@@ -72,7 +88,7 @@ export class WorkspaceMemberService {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     return await repository.find({
       where: { workspaceId },
-      relations: ['user', 'role']
+      relations: ['user', 'role'],
     });
   }
 
@@ -80,23 +96,29 @@ export class WorkspaceMemberService {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     return await repository.find({
       where: { userId },
-      relations: ['workspace', 'role']
+      relations: ['workspace', 'role'],
     });
   }
 
-  async isUserMemberOfWorkspace(workspaceId: string, userId: string): Promise<boolean> {
+  async isUserMemberOfWorkspace(
+    workspaceId: string,
+    userId: string,
+  ): Promise<boolean> {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     const count = await repository.count({
-      where: { workspaceId, userId }
+      where: { workspaceId, userId },
     });
     return count > 0;
   }
 
-  async getUserRoleInWorkspace(workspaceId: string, userId: string): Promise<WorkspaceMember | null> {
+  async getUserRoleInWorkspace(
+    workspaceId: string,
+    userId: string,
+  ): Promise<WorkspaceMember | null> {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     return await repository.findOne({
       where: { workspaceId, userId },
-      relations: ['role']
+      relations: ['role'],
     });
   }
 }
