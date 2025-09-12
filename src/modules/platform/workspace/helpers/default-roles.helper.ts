@@ -56,7 +56,6 @@ export class DefaultRolesHelper {
         read: true,
         write: true,
         delete: true,
-        privateRepositories: [],
       },
     };
   }
@@ -78,7 +77,6 @@ export class DefaultRolesHelper {
         read: true,
         write: true,
         delete: true,
-        privateRepositories: [],
       },
     };
   }
@@ -100,7 +98,6 @@ export class DefaultRolesHelper {
         read: true,
         write: false,
         delete: false,
-        privateRepositories: [],
       },
     };
   }
@@ -109,7 +106,7 @@ export class DefaultRolesHelper {
    * Filter out admin role from custom roles array to avoid duplication
    */
   static filterOutAdminRole(roles: CreateRoleDto[]): CreateRoleDto[] {
-    return roles.filter(role => role.name.toLowerCase() !== 'admin');
+    return roles.filter((role) => role.name.toLowerCase() !== 'admin');
   }
 
   /**

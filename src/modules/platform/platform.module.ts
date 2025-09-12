@@ -7,6 +7,7 @@ import { RepositoryModule } from './repository/repository.module';
 import { AuthModule } from './auth/auth.module';
 import { KeyManagementModule } from './key-management/key-management.module';
 import { SharedModule } from './shared/shared.module';
+import { DatabaseInfoModule } from './database-info/database-info.module';
 
 @Module({
   imports: [
@@ -35,9 +36,16 @@ import { SharedModule } from './shared/shared.module';
     WorkspaceModule,
     RepositoryModule,
     KeyManagementModule,
+    DatabaseInfoModule,
   ],
   controllers: [],
   providers: [],
-  exports: [AuthModule, KeyManagementModule, WorkspaceModule, RepositoryModule],
+  exports: [
+    AuthModule,
+    KeyManagementModule,
+    WorkspaceModule,
+    RepositoryModule,
+    DatabaseInfoModule,
+  ],
 })
 export class PlatformModule {}
