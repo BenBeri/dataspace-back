@@ -4,11 +4,15 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { QueryExecutionService } from '../services/query-execution.service';
 import { ConnectionPoolService } from '../services/connection-pool.service';
 import { DataSourceService } from '../../platform/repository/services/data-source.service';
 import { RepositoryService } from '../../platform/repository/services/repository.service';
+import { WorkspaceService } from '../../platform/workspace/services/workspace.service';
+import { KEY_MANAGEMENT_SERVICE } from '../../platform/key-management/key-management.module';
+import type { IKeyManagementService } from '../../platform/key-management/interfaces/key-management.interface';
 import { DataSourceType } from '../../platform/entities/enums/data-source-type.enum';
 import { IDatabaseConnection } from '../interfaces/database-connection.interface';
 import { IConnectionConfig } from '../interfaces/connection-config.interface';
@@ -29,6 +33,9 @@ export class DataEngineProvider {
     private readonly connectionPoolService: ConnectionPoolService,
     private readonly dataSourceService: DataSourceService,
     private readonly repositoryService: RepositoryService,
+    private readonly workspaceService: WorkspaceService,
+    @Inject(KEY_MANAGEMENT_SERVICE)
+    private readonly keyManagementService: IKeyManagementService,
   ) {}
 
   /**
@@ -501,6 +508,143 @@ export class DataEngineProvider {
     } catch (error) {
       this.logger.error(
         `Direct connection test failed for type ${type}: ${error.message}`,
+      );
+
+      throw new BadRequestException(`Connection test failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Test database connection using an existing DataSource entity
+   * Retrieves and decrypts credentials from the DataSource, then tests the connection
+   * Provider orchestration: Coordinates between services to get decrypted config and test connection
+   */
+  async testConnectionFromDataSource(
+    workspaceId: string,
+    repositoryId: string,
+    dataSourceId: string,
+    timeoutMs?: number,
+  ): Promise<{
+    success: boolean;
+    type: DataSourceType;
+    message: string;
+    responseTime: number;
+    error?: string;
+    serverInfo?: {
+      version?: string;
+      serverName?: string;
+      additionalInfo?: Record<string, any>;
+    };
+  }> {
+    try {
+      this.logger.debug(`Testing connection for dataSource:${dataSourceId}`);
+
+      // Provider orchestration: Validate access and get data
+      await this.validateDataSourceAccess(
+        workspaceId,
+        repositoryId,
+        dataSourceId,
+      );
+
+      // Get repository to determine database type
+      const repository =
+        await this.repositoryService.getRepositoryById(repositoryId);
+      if (!repository) {
+        throw new NotFoundException(`Repository ${repositoryId} not found`);
+      }
+
+      // Get data source and decrypt configuration
+      const decryptedConfig =
+        await this.dataSourceService.getDecryptedConfigurationById(
+          dataSourceId,
+        );
+      if (!decryptedConfig) {
+        throw new NotFoundException(
+          `No configuration found for data source ${dataSourceId}`,
+        );
+      }
+
+      // Test connection using decrypted configuration
+      const result = await this.queryExecutionService.testConnectionDirect(
+        repository.type,
+        decryptedConfig,
+        timeoutMs,
+      );
+
+      this.logger.log(
+        `DataSource connection test completed for ${dataSourceId}: ${result.success ? 'SUCCESS' : 'FAILED'} ` +
+          `(${result.responseTime}ms)`,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `DataSource connection test failed for ${dataSourceId}: ${error.message}`,
+      );
+
+      throw new BadRequestException(`Connection test failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Test database connection using encrypted credentials from request body
+   * Decrypts the provided encrypted configuration using workspace KMS key, then tests the connection
+   * Provider orchestration: Coordinates between workspace service, KMS service, and query execution service
+   */
+  async testConnectionWithEncryptedConfig(
+    workspaceId: string,
+    type: DataSourceType,
+    encryptedConfig: string,
+    timeoutMs?: number,
+  ): Promise<{
+    success: boolean;
+    type: DataSourceType;
+    message: string;
+    responseTime: number;
+    error?: string;
+    serverInfo?: {
+      version?: string;
+      serverName?: string;
+      additionalInfo?: Record<string, any>;
+    };
+  }> {
+    try {
+      this.logger.debug(
+        `Testing connection with encrypted config for workspace:${workspaceId}`,
+      );
+
+      // Provider orchestration: Get workspace to validate access
+      const workspace =
+        await this.workspaceService.getWorkspaceById(workspaceId);
+      if (!workspace) {
+        throw new NotFoundException(`Workspace ${workspaceId} not found`);
+      }
+
+      if (!workspace.kmsKeyId) {
+        throw new BadRequestException('Workspace encryption key not found');
+      }
+
+      // Decrypt the configuration
+      const decryptedConfigJson =
+        await this.keyManagementService.decrypt(encryptedConfig);
+      const decryptedConfig = JSON.parse(decryptedConfigJson);
+
+      // Test connection using decrypted configuration
+      const result = await this.queryExecutionService.testConnectionDirect(
+        type,
+        decryptedConfig,
+        timeoutMs,
+      );
+
+      this.logger.log(
+        `Encrypted config connection test completed for workspace ${workspaceId}: ${result.success ? 'SUCCESS' : 'FAILED'} ` +
+          `(${result.responseTime}ms)`,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Encrypted config connection test failed for workspace ${workspaceId}: ${error.message}`,
       );
 
       throw new BadRequestException(`Connection test failed: ${error.message}`);

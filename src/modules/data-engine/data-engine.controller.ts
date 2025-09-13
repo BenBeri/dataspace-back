@@ -27,7 +27,10 @@ import {
   RepositoryDataSourcesResponseDto,
   PoolStatisticsResponseDto,
 } from './dto/connection-status-response.dto';
-import { TestConnectionRequestDto } from './dto/test-connection-request.dto';
+import {
+  TestConnectionRequestDto,
+  TestEncryptedConnectionRequestDto,
+} from './dto/test-connection-request.dto';
 import { TestConnectionResponseDto } from './dto/test-connection-response.dto';
 import { CurrentUser } from '../platform/auth/decorators/current-user.decorator';
 import { UserSession } from '../platform/auth/models/user-session.model';
@@ -67,6 +70,41 @@ export class ConnectionTestController {
       testRequest.config,
       testRequest.timeoutMs,
     );
+
+    return {
+      success: result.success,
+      type: result.type,
+      message: result.message,
+      responseTime: result.responseTime,
+      error: result.error,
+      serverInfo: result.serverInfo,
+    };
+  }
+
+  /**
+   * Test database connection using encrypted credentials from request body
+   * Decrypts credentials using workspace KMS key and tests connection
+   * Requires workspace context for KMS key access
+   */
+  @Post('encrypted/:workspaceId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(WorkspaceGuard)
+  async testEncryptedConnection(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Body() testRequest: TestEncryptedConnectionRequestDto,
+    @CurrentUser() _user: UserSession,
+  ): Promise<TestConnectionResponseDto> {
+    this.logger.debug(
+      `Testing encrypted connection for workspace:${workspaceId}, type:${testRequest.type}`,
+    );
+
+    const result =
+      await this.dataEngineProvider.testConnectionWithEncryptedConfig(
+        workspaceId,
+        testRequest.type,
+        testRequest.encryptedConfig,
+        testRequest.timeoutMs,
+      );
 
     return {
       success: result.success,
@@ -169,6 +207,42 @@ export class DataEngineController {
     throw new Error(
       'Transaction endpoint implementation pending - requires specific use case implementation',
     );
+  }
+
+  /**
+   * Test database connection using existing DataSource entity
+   * Retrieves and decrypts credentials from DataSource, then tests connection
+   * Requires repository read permissions
+   */
+  @Post(':dataSourceId/test-connection')
+  @HttpCode(HttpStatus.OK)
+  @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
+  async testDataSourceConnection(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
+    @Body() testRequest: { timeoutMs?: number },
+    @CurrentUser() _user: UserSession,
+  ): Promise<TestConnectionResponseDto> {
+    this.logger.debug(
+      `Testing DataSource connection for dataSource:${dataSourceId}`,
+    );
+
+    const result = await this.dataEngineProvider.testConnectionFromDataSource(
+      workspaceId,
+      repositoryId,
+      dataSourceId,
+      testRequest.timeoutMs,
+    );
+
+    return {
+      success: result.success,
+      type: result.type,
+      message: result.message,
+      responseTime: result.responseTime,
+      error: result.error,
+      serverInfo: result.serverInfo,
+    };
   }
 
   /**
