@@ -27,10 +27,7 @@ import {
   RepositoryDataSourcesResponseDto,
   PoolStatisticsResponseDto,
 } from './dto/connection-status-response.dto';
-import {
-  TestConnectionRequestDto,
-  TestEncryptedConnectionRequestDto,
-} from './dto/test-connection-request.dto';
+import { TestConnectionRequestDto } from './dto/test-connection-request.dto';
 import { TestConnectionResponseDto } from './dto/test-connection-response.dto';
 import { CurrentUser } from '../platform/auth/decorators/current-user.decorator';
 import { UserSession } from '../platform/auth/models/user-session.model';
@@ -70,41 +67,6 @@ export class ConnectionTestController {
       testRequest.config,
       testRequest.timeoutMs,
     );
-
-    return {
-      success: result.success,
-      type: result.type,
-      message: result.message,
-      responseTime: result.responseTime,
-      error: result.error,
-      serverInfo: result.serverInfo,
-    };
-  }
-
-  /**
-   * Test database connection using encrypted credentials from request body
-   * Decrypts credentials using workspace KMS key and tests connection
-   * Requires workspace context for KMS key access
-   */
-  @Post('encrypted/:workspaceId')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(WorkspaceGuard)
-  async testEncryptedConnection(
-    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
-    @Body() testRequest: TestEncryptedConnectionRequestDto,
-    @CurrentUser() _user: UserSession,
-  ): Promise<TestConnectionResponseDto> {
-    this.logger.debug(
-      `Testing encrypted connection for workspace:${workspaceId}, type:${testRequest.type}`,
-    );
-
-    const result =
-      await this.dataEngineProvider.testConnectionWithEncryptedConfig(
-        workspaceId,
-        testRequest.type,
-        testRequest.encryptedConfig,
-        testRequest.timeoutMs,
-      );
 
     return {
       success: result.success,

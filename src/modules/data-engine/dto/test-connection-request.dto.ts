@@ -120,21 +120,3 @@ export class TestConnectionRequestDto {
   @IsOptional()
   timeoutMs?: number = 10000; // Default 10 seconds timeout
 }
-
-/**
- * DTO for testing connection with encrypted credentials from request body
- * Used when credentials are stored in user's localStorage and sent encrypted
- */
-export class TestEncryptedConnectionRequestDto {
-  @IsEnum(DataSourceType)
-  @IsNotEmpty()
-  type: DataSourceType;
-
-  @IsString()
-  @IsNotEmpty()
-  encryptedConfig: string; // Base64 encoded encrypted configuration
-
-  @IsNumber()
-  @IsOptional()
-  timeoutMs?: number = 10000; // Default 10 seconds timeout
-}
