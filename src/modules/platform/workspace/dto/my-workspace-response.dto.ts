@@ -2,7 +2,7 @@ export class MyWorkspaceResponseDto {
   workspaceId: string;
   nameKey: string;
   ownerUserId: string;
-  role: {
+  group: {
     name: string;
     permissions: Record<string, any>;
   };
@@ -10,4 +10,3 @@ export class MyWorkspaceResponseDto {
   updatedAt: Date;
   logoUrl?: string | null;
 }
-

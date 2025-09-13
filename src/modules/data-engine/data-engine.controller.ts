@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { DataEngineProvider } from './providers/data-engine.provider';
 import {
@@ -26,6 +27,11 @@ import {
   RepositoryDataSourcesResponseDto,
   PoolStatisticsResponseDto,
 } from './dto/connection-status-response.dto';
+import {
+  TestConnectionRequestDto,
+  TestEncryptedConnectionRequestDto,
+} from './dto/test-connection-request.dto';
+import { TestConnectionResponseDto } from './dto/test-connection-response.dto';
 import { CurrentUser } from '../platform/auth/decorators/current-user.decorator';
 import { UserSession } from '../platform/auth/models/user-session.model';
 import { CheckAbility } from '../platform/workspace/casl/decorators/check-ability.decorator';
@@ -35,6 +41,83 @@ import { RepositoryPermission } from '../platform/workspace/casl/permissions/rep
 import { WorkspaceManagementPermission } from '../platform/workspace/casl/permissions/workspace-management-permission.enum';
 
 /**
+ * Standalone Connection Testing Controller
+ * Provides REST API endpoints for testing database connections without workspace/repository context
+ * Used for validating credentials before saving to datasource
+ */
+@Controller('data-engine/test-connection')
+export class ConnectionTestController {
+  private readonly logger = new Logger(ConnectionTestController.name);
+
+  constructor(private readonly dataEngineProvider: DataEngineProvider) {}
+
+  /**
+   * Test database connection with just credentials
+   * No workspace or repository context required - just validates the connection
+   */
+  @Post()
+  @HttpCode(HttpStatus.OK)
+  async testConnection(
+    @Body() testRequest: TestConnectionRequestDto,
+    @CurrentUser() _user: UserSession,
+  ): Promise<TestConnectionResponseDto> {
+    this.logger.debug(
+      `Testing standalone connection for type:${testRequest.type}`,
+    );
+
+    const result = await this.dataEngineProvider.testConnectionDirect(
+      testRequest.type,
+      testRequest.config,
+      testRequest.timeoutMs,
+    );
+
+    return {
+      success: result.success,
+      type: result.type,
+      message: result.message,
+      responseTime: result.responseTime,
+      error: result.error,
+      serverInfo: result.serverInfo,
+    };
+  }
+
+  /**
+   * Test database connection using encrypted credentials from request body
+   * Decrypts credentials using workspace KMS key and tests connection
+   * Requires workspace context for KMS key access
+   */
+  @Post('encrypted/:workspaceId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(WorkspaceGuard)
+  async testEncryptedConnection(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Body() testRequest: TestEncryptedConnectionRequestDto,
+    @CurrentUser() _user: UserSession,
+  ): Promise<TestConnectionResponseDto> {
+    this.logger.debug(
+      `Testing encrypted connection for workspace:${workspaceId}, type:${testRequest.type}`,
+    );
+
+    const result =
+      await this.dataEngineProvider.testConnectionWithEncryptedConfig(
+        workspaceId,
+        testRequest.type,
+        testRequest.encryptedConfig,
+        testRequest.timeoutMs,
+      );
+
+    return {
+      success: result.success,
+      type: result.type,
+      message: result.message,
+      responseTime: result.responseTime,
+      error: result.error,
+      serverInfo: result.serverInfo,
+    };
+  }
+}
+
+/**
  * Data Engine Controller
  * Provides REST API endpoints for multi-database query execution
  * Follows project convention: Controller → Provider → Service → Repository
@@ -42,6 +125,8 @@ import { WorkspaceManagementPermission } from '../platform/workspace/casl/permis
 @Controller('workspaces/:workspaceId/repositories/:repositoryId/data-sources')
 @UseGuards(WorkspaceGuard, RepositoryGuard)
 export class DataEngineController {
+  private readonly logger = new Logger(DataEngineController.name);
+
   constructor(private readonly dataEngineProvider: DataEngineProvider) {}
 
   /**
@@ -122,6 +207,42 @@ export class DataEngineController {
     throw new Error(
       'Transaction endpoint implementation pending - requires specific use case implementation',
     );
+  }
+
+  /**
+   * Test database connection using existing DataSource entity
+   * Retrieves and decrypts credentials from DataSource, then tests connection
+   * Requires repository read permissions
+   */
+  @Post(':dataSourceId/test-connection')
+  @HttpCode(HttpStatus.OK)
+  @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
+  async testDataSourceConnection(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
+    @Body() testRequest: { timeoutMs?: number },
+    @CurrentUser() _user: UserSession,
+  ): Promise<TestConnectionResponseDto> {
+    this.logger.debug(
+      `Testing DataSource connection for dataSource:${dataSourceId}`,
+    );
+
+    const result = await this.dataEngineProvider.testConnectionFromDataSource(
+      workspaceId,
+      repositoryId,
+      dataSourceId,
+      testRequest.timeoutMs,
+    );
+
+    return {
+      success: result.success,
+      type: result.type,
+      message: result.message,
+      responseTime: result.responseTime,
+      error: result.error,
+      serverInfo: result.serverInfo,
+    };
   }
 
   /**
@@ -231,7 +352,10 @@ export class DataEngineAdminController {
    */
   @Get('pool/statistics')
   @HttpCode(HttpStatus.OK)
-  @CheckAbility({ action: WorkspaceManagementPermission.MANAGE, subject: 'Workspace' }) // Admin-level access
+  @CheckAbility({
+    action: WorkspaceManagementPermission.MANAGE,
+    subject: 'Workspace',
+  }) // Admin-level access
   async getPoolStatistics(
     @CurrentUser() _user: UserSession,
   ): Promise<PoolStatisticsResponseDto> {

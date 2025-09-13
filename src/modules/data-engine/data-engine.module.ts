@@ -7,6 +7,7 @@ import { ConnectionPoolService } from './services/connection-pool.service';
 import { QueryExecutionService } from './services/query-execution.service';
 import { DataEngineProvider } from './providers/data-engine.provider';
 import {
+  ConnectionTestController,
   DataEngineController,
   DataEngineAdminController,
 } from './data-engine.controller';
@@ -23,6 +24,7 @@ import {
   ],
   controllers: [
     // REST API controllers
+    ConnectionTestController, // Standalone connection testing
     DataEngineController,
     DataEngineAdminController,
   ],

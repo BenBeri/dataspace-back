@@ -8,9 +8,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Workspace } from './workspace.entity';
+import type { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 
-@Entity('roles')
-export class Role {
+@Entity('groups') // renamed from 'roles'
+export class Group {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -21,7 +22,7 @@ export class Role {
   workspaceId: string;
 
   @Column('jsonb')
-  permissions: Record<string, any>;
+  permissions: WorkspacePermissions; // Full permissions, NO undefined values allowed
 
   @ManyToOne(() => Workspace)
   @JoinColumn({ name: 'workspaceId' })

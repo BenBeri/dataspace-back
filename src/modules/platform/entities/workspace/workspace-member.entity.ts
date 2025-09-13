@@ -9,7 +9,8 @@ import {
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Workspace } from './workspace.entity';
-import { Role } from './role.entity';
+import { Group } from './group.entity';
+import type { PartialWorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 
 @Entity('workspace_members')
 export class WorkspaceMember {
@@ -23,10 +24,13 @@ export class WorkspaceMember {
   workspaceId: string;
 
   @Column()
-  roleId: string;
+  groupId: string; // renamed from roleId
 
   @Column({ default: false })
   isAdmin: boolean;
+
+  @Column('jsonb', { nullable: true })
+  permissions?: PartialWorkspacePermissions; // User-specific permission overrides for THIS workspace
 
   @ManyToOne(() => User, (user) => user.workspaceMemberships)
   @JoinColumn({ name: 'userId' })
@@ -36,9 +40,9 @@ export class WorkspaceMember {
   @JoinColumn({ name: 'workspaceId' })
   workspace: Workspace;
 
-  @ManyToOne(() => Role)
-  @JoinColumn({ name: 'roleId' })
-  role: Role;
+  @ManyToOne(() => Group)
+  @JoinColumn({ name: 'groupId' })
+  group: Group; // renamed from role
 
   @CreateDateColumn()
   createdAt: Date;

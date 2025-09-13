@@ -7,6 +7,7 @@ import {
 import { WorkspaceMember } from '../../entities/workspace/workspace-member.entity';
 import { WorkspaceMemberRepository } from '../repositories/workspace-member.repository';
 import { TransactionManagerService } from '../../shared/services/transaction-manager.service';
+import type { PartialWorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 
 @Injectable()
 export class WorkspaceMemberService {
@@ -18,7 +19,7 @@ export class WorkspaceMemberService {
   async addMemberToWorkspace(
     workspaceId: string,
     userId: string,
-    roleId: string,
+    groupId: string,
   ): Promise<WorkspaceMember> {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
 
@@ -34,26 +35,26 @@ export class WorkspaceMemberService {
     const memberData = {
       workspaceId,
       userId,
-      roleId,
+      groupId,
     };
 
     const member = repository.create(memberData);
     return await repository.save(member);
   }
 
-  async updateMemberRole(
+  async updateMemberGroup(
     workspaceId: string,
     userId: string,
-    roleId: string,
+    groupId: string,
     currentUserId: string,
   ): Promise<WorkspaceMember> {
     const member = await this.getMemberByWorkspaceAndUser(workspaceId, userId);
     const repository = this.transactionManager.getRepository(WorkspaceMember);
 
-    // Note: Role update permissions would be checked in the provider level
+    // Note: Group update permissions would be checked in the provider level
     // where we can access workspace ownership information
 
-    await repository.update(member.id, { roleId });
+    await repository.update(member.id, { groupId });
 
     return await this.getMemberByWorkspaceAndUser(workspaceId, userId);
   }
@@ -74,7 +75,7 @@ export class WorkspaceMemberService {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     const member = await repository.findOne({
       where: { workspaceId, userId },
-      relations: ['user', 'role', 'workspace'],
+      relations: ['user', 'group', 'workspace'],
     });
 
     if (!member) {
@@ -88,7 +89,7 @@ export class WorkspaceMemberService {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     return await repository.find({
       where: { workspaceId },
-      relations: ['user', 'role'],
+      relations: ['user', 'group'],
     });
   }
 
@@ -96,7 +97,7 @@ export class WorkspaceMemberService {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     return await repository.find({
       where: { userId },
-      relations: ['workspace', 'role'],
+      relations: ['workspace', 'group'],
     });
   }
 
@@ -111,14 +112,37 @@ export class WorkspaceMemberService {
     return count > 0;
   }
 
-  async getUserRoleInWorkspace(
+  async getUserGroupInWorkspace(
     workspaceId: string,
     userId: string,
   ): Promise<WorkspaceMember | null> {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     return await repository.findOne({
       where: { workspaceId, userId },
-      relations: ['role'],
+      relations: ['group'],
+    });
+  }
+
+  async updateMemberPermissions(
+    workspaceId: string,
+    userId: string,
+    permissions: PartialWorkspacePermissions,
+  ): Promise<WorkspaceMember> {
+    const member = await this.getMemberByWorkspaceAndUser(workspaceId, userId);
+    const repository = this.transactionManager.getRepository(WorkspaceMember);
+
+    await repository.update(member.id, { permissions });
+
+    return await this.getMemberByWorkspaceAndUser(workspaceId, userId);
+  }
+
+  async getWorkspaceMembersWithDetails(
+    workspaceId: string,
+  ): Promise<WorkspaceMember[]> {
+    const repository = this.transactionManager.getRepository(WorkspaceMember);
+    return await repository.find({
+      where: { workspaceId },
+      relations: ['user', 'group'],
     });
   }
 }

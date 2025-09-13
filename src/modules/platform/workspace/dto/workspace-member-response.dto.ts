@@ -1,14 +1,14 @@
 import { UserResponseDto } from '../../users/dto/user-response.dto';
-import { RoleResponseDto } from './role-response.dto';
+import { GroupResponseDto } from './group-response.dto';
 import { WorkspaceResponseDto } from './workspace-response.dto';
 
 export class WorkspaceMemberResponseDto {
   id: string;
   userId: string;
   workspaceId: string;
-  roleId: string;
+  groupId: string;
   user: UserResponseDto;
-  role: RoleResponseDto;
+  group: GroupResponseDto;
   workspace?: WorkspaceResponseDto;
   createdAt: Date;
   updatedAt: Date;

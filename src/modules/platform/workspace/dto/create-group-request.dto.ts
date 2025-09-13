@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsObject } from 'class-validator';
 import type { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 
-export class CreateRoleDto {
+export class CreateGroupRequestDto {
   @IsString()
   @IsNotEmpty()
   name: string;
