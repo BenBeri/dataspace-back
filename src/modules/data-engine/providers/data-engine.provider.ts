@@ -11,6 +11,7 @@ import { DataSourceService } from '../../platform/repository/services/data-sourc
 import { RepositoryService } from '../../platform/repository/services/repository.service';
 import { DataSourceType } from '../../platform/entities/enums/data-source-type.enum';
 import { IDatabaseConnection } from '../interfaces/database-connection.interface';
+import { IConnectionConfig } from '../interfaces/connection-config.interface';
 
 /**
  * Data Engine Provider - Orchestration layer for data engine operations
@@ -457,6 +458,52 @@ export class DataEngineProvider {
     } catch (error) {
       this.logger.error(`Failed to get pool statistics: ${error.message}`);
       throw new BadRequestException('Failed to get pool statistics');
+    }
+  }
+
+  /**
+   * Test database connection without saving to datasource or using connection pooling
+   * Creates a temporary connection just for testing, then disconnects immediately
+   * Provider orchestration: Direct call to service since no cross-service coordination needed
+   */
+  async testConnectionDirect(
+    type: DataSourceType,
+    config: IConnectionConfig,
+    timeoutMs?: number,
+  ): Promise<{
+    success: boolean;
+    type: DataSourceType;
+    message: string;
+    responseTime: number;
+    error?: string;
+    serverInfo?: {
+      version?: string;
+      serverName?: string;
+      additionalInfo?: Record<string, any>;
+    };
+  }> {
+    try {
+      this.logger.debug(`Testing direct connection for database type: ${type}`);
+
+      // Direct service call - no cross-service orchestration needed
+      const result = await this.queryExecutionService.testConnectionDirect(
+        type,
+        config,
+        timeoutMs,
+      );
+
+      this.logger.log(
+        `Direct connection test completed for ${type}: ${result.success ? 'SUCCESS' : 'FAILED'} ` +
+          `(${result.responseTime}ms)`,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Direct connection test failed for type ${type}: ${error.message}`,
+      );
+
+      throw new BadRequestException(`Connection test failed: ${error.message}`);
     }
   }
 

@@ -1342,6 +1342,94 @@
       "description": "Multi-database query execution endpoints. Execute queries, batch operations, and manage connections for various database types (PostgreSQL, MySQL, MongoDB, etc.).",
       "item": [
         {
+          "name": "Test Database Connection",
+          "description": "Test database connection with credentials only - no workspace or repository context required",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"postgres\",\n  \"config\": {\n    \"host\": \"localhost\",\n    \"port\": 5432,\n    \"username\": \"postgres\",\n    \"password\": \"password\",\n    \"database\": \"testdb\",\n    \"ssl\": false\n  },\n  \"timeoutMs\": 10000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/data-engine/test-connection",
+              "host": ["{{baseUrl}}"],
+              "path": ["data-engine", "test-connection"]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response - PostgreSQL",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"postgres\",\n  \"config\": {\n    \"host\": \"localhost\",\n    \"port\": 5432,\n    \"username\": \"postgres\",\n    \"password\": \"password\",\n    \"database\": \"testdb\",\n    \"ssl\": false\n  },\n  \"timeoutMs\": 10000\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/data-engine/test-connection",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["data-engine", "test-connection"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"type\": \"postgres\",\n  \"message\": \"Connection test successful\",\n  \"responseTime\": 234,\n  \"serverInfo\": {\n    \"version\": \"PostgreSQL 16.1 on x86_64-pc-linux-gnu\",\n    \"serverName\": \"PostgreSQL\"\n  }\n}"
+            },
+            {
+              "name": "Failed Response - Connection Error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"postgres\",\n  \"config\": {\n    \"host\": \"invalid-host\",\n    \"port\": 5432,\n    \"username\": \"postgres\",\n    \"password\": \"password\",\n    \"database\": \"testdb\",\n    \"ssl\": false\n  },\n  \"timeoutMs\": 10000\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/data-engine/test-connection",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["data-engine", "test-connection"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"type\": \"postgres\",\n  \"message\": \"Connection test failed\",\n  \"responseTime\": 5000,\n  \"error\": \"connect ENOTFOUND invalid-host\"\n}"
+            }
+          ]
+        },
+        {
           "name": "Execute Query",
           "request": {
             "method": "POST",
