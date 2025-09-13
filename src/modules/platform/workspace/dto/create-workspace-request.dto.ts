@@ -1,6 +1,12 @@
-import { IsNotEmpty, IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { CreateRoleDto } from './create-role.dto';
+import { CreateGroupDto } from './create-group.dto';
 
 export class CreateWorkspaceRequestDto {
   @IsString()
@@ -14,6 +20,6 @@ export class CreateWorkspaceRequestDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateRoleDto)
-  roles?: CreateRoleDto[];
+  @Type(() => CreateGroupDto)
+  groups?: CreateGroupDto[];
 }

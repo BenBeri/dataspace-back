@@ -5,23 +5,52 @@ export interface RepositoryPermissions {
 }
 
 export interface WorkspacePermissions {
+  // Workspace-level permissions
   read: boolean;
   write: boolean;
   delete: boolean;
-  users: {
+
+  // Member management permissions (renamed from 'users')
+  membersManagement: {
     read: boolean;
     write: boolean;
     delete: boolean;
   };
+
+  // Repository permissions
   repository: {
-    read: boolean; // Public repositories only
-    write: boolean; // Public repositories only
-    delete: boolean; // Public repositories only
+    // Permissions for all public repositories
+    public: RepositoryPermissions;
+
+    // Permissions for specific private repositories by ID
+    private: {
+      [repositoryId: string]: RepositoryPermissions;
+    };
   };
 }
 
-/**
- * Missions:
- */
-// 1. users permission should be stronger than all permission. if there is no users permission, then its undefined and we take from the other roles.
-// 2. how to fetch all the users that connect to repo ( table users_repositories maybe?)
+// Type for partial permissions (used for user overrides in WorkspaceMember)
+export type PartialWorkspacePermissions = {
+  read?: boolean;
+  write?: boolean;
+  delete?: boolean;
+  membersManagement?: {
+    read?: boolean;
+    write?: boolean;
+    delete?: boolean;
+  };
+  repository?: {
+    public?: {
+      read?: boolean;
+      write?: boolean;
+      delete?: boolean;
+    };
+    private?: {
+      [repositoryId: string]: {
+        read?: boolean;
+        write?: boolean;
+        delete?: boolean;
+      };
+    };
+  };
+};

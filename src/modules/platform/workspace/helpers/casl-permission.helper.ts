@@ -6,7 +6,11 @@ import {
   AbilityContext,
   Action,
 } from '../../workspace/casl/workspace-ability.factory';
-import { WorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
+import {
+  WorkspacePermissions,
+  PartialWorkspacePermissions,
+} from '../../auth/interfaces/workspace-permissions.interface';
+import { PermissionMergeHelper } from '../../shared/helpers/permission-merge.helper';
 
 @Injectable()
 export class CaslPermissionHelper {
@@ -30,15 +34,28 @@ export class CaslPermissionHelper {
     let permissions: WorkspacePermissions | undefined;
 
     if (!isWorkspaceOwner) {
-      // Get user's role in the workspace
-      const memberRole =
-        await this.workspaceMemberService.getUserRoleInWorkspace(
+      // Get user's group and overrides in the workspace
+      const memberWithGroup =
+        await this.workspaceMemberService.getMemberByWorkspaceAndUser(
           workspaceId,
           userId,
         );
 
-      if (memberRole?.role?.permissions) {
-        permissions = memberRole.role.permissions as WorkspacePermissions;
+      if (memberWithGroup?.group?.permissions) {
+        // Step 1: Get permissions from the group
+        const groupPermissions = memberWithGroup.group
+          .permissions as WorkspacePermissions;
+
+        // Step 2: Get permissions from the user (WorkspaceMember overrides)
+        const userOverrides = memberWithGroup.permissions as
+          | PartialWorkspacePermissions
+          | undefined;
+
+        // Step 3: Deep merge - override only primitives, recursively
+        permissions = PermissionMergeHelper.deepMergePermissions(
+          groupPermissions,
+          userOverrides,
+        );
       }
     }
 
@@ -78,10 +95,10 @@ export class CaslPermissionHelper {
   }
 
   /**
-   * Get member role for a user in a workspace
+   * Get member group for a user in a workspace
    */
   async getMemberRole(userId: string, workspaceId: string): Promise<any> {
-    return await this.workspaceMemberService.getUserRoleInWorkspace(
+    return await this.workspaceMemberService.getMemberByWorkspaceAndUser(
       workspaceId,
       userId,
     );
@@ -114,13 +131,26 @@ export class CaslPermissionHelper {
     workspaceId: string,
   ) {
     // Use cached member role if available
-    const memberRole = request.workspaceMemberRole;
+    const memberWithGroup = request.workspaceMemberRole;
     const isWorkspaceOwner = request.workspace?.ownerUserId === userId;
 
     let permissions: WorkspacePermissions | undefined;
 
-    if (!isWorkspaceOwner && memberRole?.role?.permissions) {
-      permissions = memberRole.role.permissions as WorkspacePermissions;
+    if (!isWorkspaceOwner && memberWithGroup?.group?.permissions) {
+      // Step 1: Get permissions from the group
+      const groupPermissions = memberWithGroup.group
+        .permissions as WorkspacePermissions;
+
+      // Step 2: Get permissions from the user (WorkspaceMember overrides)
+      const userOverrides = memberWithGroup.permissions as
+        | PartialWorkspacePermissions
+        | undefined;
+
+      // Step 3: Deep merge - override only primitives, recursively
+      permissions = PermissionMergeHelper.deepMergePermissions(
+        groupPermissions,
+        userOverrides,
+      );
     }
 
     const context = {
@@ -128,6 +158,7 @@ export class CaslPermissionHelper {
       workspaceId,
       isWorkspaceOwner,
       permissions,
+      repository: request.repository, // Include repository context for specific checks
     };
 
     return await this.workspaceAbilityFactory.createForUser(context);

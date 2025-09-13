@@ -7,5 +7,5 @@ export class AddMemberRequestDto {
 
   @IsString()
   @IsNotEmpty()
-  roleName: string;
+  groupName: string;
 }

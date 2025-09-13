@@ -1,4 +1,4 @@
-export class RoleResponseDto {
+export class GroupResponseDto {
   id: string;
   name: string;
   permissions: Record<string, any>;

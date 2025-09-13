@@ -3,18 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Repository } from '../entities/repository/repository.entity';
 import { DataSource } from '../entities/repository/data-source.entity';
 import { DataSourceChangeHistory } from '../entities/repository/data-source-change-history.entity';
-import { UserPrivateRepository } from '../entities/repository/user-private-repository.entity';
 import { RepositoryController } from './repository.controller';
-import { PrivateRepositoryAccessController } from './controllers/private-repository-access.controller';
 import { RepositoryProvider } from './providers/repository.provider';
 import { RepositoryService } from './services/repository.service';
 import { DataSourceService } from './services/data-source.service';
 import { DataSourceChangeHistoryService } from './services/data-source-change-history.service';
-import { UserPrivateRepositoryService } from './services/user-private-repository.service';
 import { RepositoryRepository } from './repositories/repository.repository';
 import { DataSourceRepository } from './repositories/data-source.repository';
 import { DataSourceChangeHistoryRepository } from './repositories/data-source-change-history.repository';
-import { UserPrivateRepositoryRepository } from './repositories/user-private-repository.repository';
 import { RepositoryFacade } from './facades/repository.facade';
 import { RepositoryGuard } from './guards/repository.guard';
 import { CaslRepositoryGuard } from './guards/casl-repository.guard';
@@ -24,17 +20,12 @@ import { KeyManagementModule } from '../key-management/key-management.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Repository,
-      DataSource,
-      DataSourceChangeHistory,
-      UserPrivateRepository,
-    ]),
+    TypeOrmModule.forFeature([Repository, DataSource, DataSourceChangeHistory]),
     forwardRef(() => WorkspaceModule),
     forwardRef(() => AuthModule),
     KeyManagementModule,
   ],
-  controllers: [RepositoryController, PrivateRepositoryAccessController],
+  controllers: [RepositoryController],
   providers: [
     // Providers
     RepositoryProvider,
@@ -43,13 +34,11 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     RepositoryService,
     DataSourceService,
     DataSourceChangeHistoryService,
-    UserPrivateRepositoryService,
 
     // Repositories
     RepositoryRepository,
     DataSourceRepository,
     DataSourceChangeHistoryRepository,
-    UserPrivateRepositoryRepository,
 
     // Facades
     RepositoryFacade,
@@ -64,8 +53,6 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     RepositoryFacade,
     DataSourceService,
     DataSourceRepository,
-    UserPrivateRepositoryService,
-    UserPrivateRepositoryRepository,
     RepositoryGuard,
     CaslRepositoryGuard,
   ],

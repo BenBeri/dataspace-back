@@ -12,7 +12,6 @@ import { WorkspacePermissions } from '../../auth/interfaces/workspace-permission
 import { WorkspaceManagementPermission } from './permissions/workspace-management-permission.enum';
 import { RepositoryPermission } from './permissions/repository-permission.enum';
 import { UserPermission } from './permissions/user-permission.enum';
-import { UserPrivateRepositoryService } from '../../repository/services/user-private-repository.service';
 
 // Define all subjects that can have permissions applied
 type Subjects =
@@ -33,15 +32,12 @@ export interface AbilityContext {
   userId: string;
   workspaceId: string;
   isWorkspaceOwner: boolean;
-  permissions?: WorkspacePermissions;
+  permissions?: WorkspacePermissions; // This is the FINAL merged permissions
+  repository?: Repository; // Optional: for repository-specific checks
 }
 
 @Injectable()
 export class WorkspaceAbilityFactory {
-  constructor(
-    private readonly userPrivateRepositoryService: UserPrivateRepositoryService,
-  ) {}
-
   async createForUser(context: AbilityContext): Promise<AppAbility> {
     const { can, build } = new AbilityBuilder<AppAbility>(Ability);
 
@@ -81,73 +77,84 @@ export class WorkspaceAbilityFactory {
       });
     }
 
-    // User permissions
-    if (permissions.users?.read) {
+    // Member Management permissions (renamed from users)
+    if (permissions.membersManagement?.read) {
       can(UserPermission.READ, User);
     }
-    if (permissions.users?.write) {
+    if (permissions.membersManagement?.write) {
       can([UserPermission.CREATE, UserPermission.UPDATE], User);
     }
-    if (permissions.users?.delete) {
+    if (permissions.membersManagement?.delete) {
       can(UserPermission.DELETE, User);
     }
 
-    // Repository permissions
-    if (permissions.repository) {
-      // Public repository permissions
-      if (permissions.repository.read) {
+    // Repository permissions - check if we're evaluating a specific repository
+    if (context.repository) {
+      const repo = context.repository;
+
+      if (repo.isPrivate) {
+        // For private repos, check specific repository permissions
+        const privatePerms = permissions.repository?.private?.[repo.id];
+
+        if (privatePerms?.read) {
+          can(RepositoryPermission.READ, Repository, { id: repo.id });
+        }
+        if (privatePerms?.write) {
+          can(
+            [RepositoryPermission.UPDATE, RepositoryPermission.CREATE],
+            Repository,
+            { id: repo.id },
+          );
+        }
+        if (privatePerms?.delete) {
+          can(RepositoryPermission.DELETE, Repository, { id: repo.id });
+        }
+      } else {
+        // For public repos, use public permissions
+        const publicPerms = permissions.repository?.public;
+
+        if (publicPerms?.read) {
+          can(RepositoryPermission.READ, Repository, { id: repo.id });
+        }
+        if (publicPerms?.write) {
+          can(
+            [RepositoryPermission.UPDATE, RepositoryPermission.CREATE],
+            Repository,
+            { id: repo.id },
+          );
+        }
+        if (publicPerms?.delete) {
+          can(RepositoryPermission.DELETE, Repository, { id: repo.id });
+        }
+      }
+    } else {
+      // General repository permissions (for listing, creating new repos, etc.)
+      if (permissions.repository?.public?.read) {
         can(RepositoryPermission.READ, Repository, {
           workspaceId: context.workspaceId,
           isPrivate: false,
         });
       }
-      if (permissions.repository.write) {
-        can(
-          [RepositoryPermission.CREATE, RepositoryPermission.UPDATE],
-          Repository,
-          {
-            workspaceId: context.workspaceId,
-            isPrivate: false,
-          },
-        );
-      }
-      if (permissions.repository.delete) {
-        can(RepositoryPermission.DELETE, Repository, {
-          workspaceId: context.workspaceId,
-          isPrivate: false,
-        });
-      }
 
-      // Private repository permissions - Mission 1: Whitelist system
-      const privateRepoAccess =
-        await this.userPrivateRepositoryService.getUserPrivateRepositoryAccess(
-          context.userId,
-          context.workspaceId,
-        );
-
-      privateRepoAccess.forEach((access) => {
-        const conditions = {
-          id: access.repositoryId,
-          isPrivate: true,
-        };
-
-        if (access.permissions.read) {
-          can(RepositoryPermission.READ, Repository, conditions);
-        }
-        if (access.permissions.write) {
-          can(RepositoryPermission.UPDATE, Repository, conditions);
-        }
-        if (access.permissions.delete) {
-          can(RepositoryPermission.DELETE, Repository, conditions);
-        }
-      });
-
-      // Allow creation of repositories if user has write permission
-      if (permissions.repository.write) {
+      if (permissions.repository?.public?.write) {
         can(RepositoryPermission.CREATE, Repository, {
           workspaceId: context.workspaceId,
         });
       }
+
+      // Add permissions for all private repos the user has access to
+      const privateRepos = permissions.repository?.private || {};
+      Object.entries(privateRepos).forEach(([repoId, repoPerms]) => {
+        if (repoPerms.read) {
+          can(RepositoryPermission.READ, Repository, { id: repoId });
+        }
+        if (repoPerms.write) {
+          can(RepositoryPermission.UPDATE, Repository, { id: repoId });
+        }
+        if (repoPerms.delete) {
+          can(RepositoryPermission.DELETE, Repository, { id: repoId });
+        }
+      });
     }
 
     return build({

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Dataspace API",
-    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, Repositories and Data Sources management. Now featuring CASL-based permission system with workspace owner privileges, admin member roles, and private repository whitelist access control. Mission 1 & 2 complete: User-specific private repository permissions override role permissions.",
+    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, Repositories and Data Sources management. Now featuring CASL-based permission system with workspace owner privileges, group-based permissions, and user-specific permission overrides. Mission 1 & 2 complete: Hierarchical permission system with deep merge logic for user-specific overrides.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "dataspace-api-collection",
     "version": "5.0.0"
@@ -18,10 +18,10 @@
       "type": "string"
     },
     {
-      "key": "roleId",
+      "key": "groupId",
       "value": "",
       "type": "string",
-      "description": "UUID of a role for testing role endpoints"
+      "description": "UUID of a group for testing group endpoints"
     },
     {
       "key": "workspaceId",
@@ -545,7 +545,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "my-workspaces"]
             },
-            "description": "Gets simplified workspace information for the current authenticated user. Returns: workspaceId, nameKey, ownerUserId, role (name and permissions), createdAt, updatedAt."
+            "description": "Gets simplified workspace information for the current authenticated user. Returns: workspaceId, nameKey, ownerUserId, group (name and permissions), createdAt, updatedAt."
           },
           "response": [
             {
@@ -564,7 +564,7 @@
               "_postman_previewlanguage": "json",
               "header": [],
               "cookie": [],
-              "body": "[\n  {\n    \"workspaceId\": \"uuid\",\n    \"nameKey\": \"my-workspace\",\n    \"ownerUserId\": \"uuid\",\n    \"isAdmin\": true,\n    \"role\": {\n      \"name\": \"admin\",\n      \"permissions\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": true,\n        \"users\": {\n          \"read\": true,\n          \"write\": true,\n          \"delete\": true\n        },\n        \"repository\": {\n          \"read\": true,\n          \"write\": true,\n          \"delete\": true,\n          \"privateRepositories\": []\n        }\n      }\n    },\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00Z\"\n  }\n]"
+              "body": "[\n  {\n    \"workspaceId\": \"uuid\",\n    \"nameKey\": \"my-workspace\",\n    \"ownerUserId\": \"uuid\",\n    \"group\": {\n      \"name\": \"admin\",\n      \"permissions\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": true,\n        \"membersManagement\": {\n          \"read\": true,\n          \"write\": true,\n          \"delete\": true\n        },\n        \"repository\": {\n          \"public\": {\n            \"read\": true,\n            \"write\": true,\n            \"delete\": true\n          },\n          \"private\": {}\n        }\n      }\n    },\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00Z\"\n  }\n]"
             }
           ]
         }
@@ -585,7 +585,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": 2,\n  \"roleName\": \"Admin\",\n  \"isAdmin\": true\n}"
+              "raw": "{\n  \"userId\": 2,\n  \"groupName\": \"admin\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/workspaces/1/members",
@@ -610,7 +610,7 @@
           "response": []
         },
         {
-          "name": "Update Member Role",
+          "name": "Update Member Group",
           "request": {
             "method": "PATCH",
             "header": [
@@ -621,12 +621,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"roleName\": \"Viewer\"\n}"
+              "raw": "{\n  \"groupName\": \"viewer\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/workspaces/1/members/2/role",
+              "raw": "{{baseUrl}}/workspaces/1/members/2/group",
               "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "1", "members", "2", "role"]
+              "path": ["workspaces", "1", "members", "2", "group"]
             }
           },
           "response": []
@@ -661,10 +661,10 @@
       ]
     },
     {
-      "name": "Roles",
+      "name": "Groups (Permission Management)",
       "item": [
         {
-          "name": "Create Role",
+          "name": "Create Group",
           "request": {
             "method": "POST",
             "header": [
@@ -675,18 +675,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"admin\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": true,\n    \"delete\": true,\n    \"users\": {\n      \"read\": true,\n      \"write\": true,\n      \"delete\": true\n    },\n    \"repository\": {\n      \"read\": true,\n      \"write\": true,\n      \"delete\": true,\n      \"privateRepositories\": []\n    }\n  }\n}"
+              "raw": "{\n  \"name\": \"admin\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": true,\n    \"delete\": true,\n    \"membersManagement\": {\n      \"read\": true,\n      \"write\": true,\n      \"delete\": true\n    },\n    \"repository\": {\n      \"public\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": true\n      },\n      \"private\": {}\n    }\n  }\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/roles",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/groups",
               "host": ["{{baseUrl}}"],
-              "path": ["roles"]
+              "path": ["workspaces", "{{workspaceId}}", "groups"]
             }
           },
           "response": []
         },
         {
-          "name": "Create Member Role",
+          "name": "Create Viewer Group",
           "request": {
             "method": "POST",
             "header": [
@@ -697,44 +697,44 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"member\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": false,\n    \"delete\": false,\n    \"users\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false\n    },\n    \"repository\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false,\n      \"privateRepositories\": []\n    }\n  }\n}"
+              "raw": "{\n  \"name\": \"viewer\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": false,\n    \"delete\": false,\n    \"membersManagement\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false\n    },\n    \"repository\": {\n      \"public\": {\n        \"read\": true,\n        \"write\": false,\n        \"delete\": false\n      },\n      \"private\": {}\n    }\n  }\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/roles",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/groups",
               "host": ["{{baseUrl}}"],
-              "path": ["roles"]
+              "path": ["workspaces", "{{workspaceId}}", "groups"]
             }
           },
           "response": []
         },
         {
-          "name": "Get All Roles",
+          "name": "Get All Groups",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/roles",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/groups",
               "host": ["{{baseUrl}}"],
-              "path": ["roles"]
+              "path": ["workspaces", "{{workspaceId}}", "groups"]
             }
           },
           "response": []
         },
         {
-          "name": "Get Role by ID",
+          "name": "Get Group by ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/groups/{{groupId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["roles", "{{roleId}}"]
+              "path": ["workspaces", "{{workspaceId}}", "groups", "{{groupId}}"]
             }
           },
           "response": []
         },
         {
-          "name": "Update Role",
+          "name": "Update Group",
           "request": {
             "method": "PATCH",
             "header": [
@@ -745,25 +745,25 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"updated-admin\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": true,\n    \"delete\": false,\n    \"users\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false\n    },\n    \"repository\": {\n      \"read\": true,\n      \"write\": true,\n      \"delete\": false,\n      \"privateRepositories\": [\n        {\n          \"repositoryKey\": \"secret-repo\",\n          \"permissions\": {\n            \"read\": true,\n            \"write\": true,\n            \"delete\": false\n          }\n        }\n      ]\n    }\n  }\n}"
+              "raw": "{\n  \"name\": \"updated-admin\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": true,\n    \"delete\": false,\n    \"membersManagement\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false\n    },\n    \"repository\": {\n      \"public\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": false\n      },\n      \"private\": {\n        \"{{repositoryId}}\": {\n          \"read\": true,\n          \"write\": true,\n          \"delete\": false\n        }\n      }\n    }\n  }\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/groups/{{groupId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["roles", "{{roleId}}"]
+              "path": ["workspaces", "{{workspaceId}}", "groups", "{{groupId}}"]
             }
           },
           "response": []
         },
         {
-          "name": "Delete Role",
+          "name": "Delete Group",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/groups/{{groupId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["roles", "{{roleId}}"]
+              "path": ["workspaces", "{{workspaceId}}", "groups", "{{groupId}}"]
             }
           },
           "response": []
@@ -1006,11 +1006,11 @@
       ]
     },
     {
-      "name": "Private Repository Access",
-      "description": "Mission 1 & 2 Complete: Whitelist-based private repository access control. Individual users can be granted access to private repositories regardless of their role permissions. This system provides user-specific permissions that override role limitations.",
+      "name": "Permission Management",
+      "description": "Mission 1 & 2 Complete: Hierarchical permission system with user-specific overrides. Users inherit permissions from their group but can have specific overrides that use deep merge logic to customize access at granular levels.",
       "item": [
         {
-          "name": "Grant User Access to Private Repository",
+          "name": "Grant Repository Permissions to User",
           "request": {
             "method": "POST",
             "header": [
@@ -1021,115 +1021,148 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"permissions\": {\n    \"read\": true,\n    \"write\": false,\n    \"delete\": false\n  },\n  \"accessReason\": \"invited\"\n}"
+              "raw": "{\n  \"read\": true,\n  \"write\": true,\n  \"delete\": false\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/private-access",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/permissions/users/{{userId}}",
               "host": ["{{baseUrl}}"],
               "path": [
                 "workspaces",
                 "{{workspaceId}}",
                 "repositories",
                 "{{repositoryId}}",
-                "private-access"
-              ]
-            },
-            "description": "Mission 1: Grant a user access to a private repository. This bypasses role permissions - even if the user's role doesn't allow repository access, they will be able to access this specific private repository. The accessReason can be 'invited', 'owner', or 'admin'."
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Users with Access to Private Repository",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/private-access",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "private-access"
-              ]
-            },
-            "description": "Mission 2: Get all users who have access to this private repository. Returns the complete whitelist with user details, permissions, and access reasons."
-          },
-          "response": []
-        },
-        {
-          "name": "Update User Permissions for Private Repository",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"permissions\": {\n    \"read\": true,\n    \"write\": true,\n    \"delete\": false\n  }\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/private-access/users/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "private-access",
+                "permissions",
                 "users",
                 "{{userId}}"
               ]
             },
-            "description": "Update a user's permissions for a specific private repository. This modifies their whitelist entry - useful for promoting/demoting access levels."
+            "description": "Mission 1: Grant specific permissions to a user for a private repository. This creates user-specific permission overrides that are deep merged with their group permissions. Only works on private repositories."
           },
           "response": []
         },
         {
-          "name": "Check Specific User Access to Private Repository",
+          "name": "Get All Users with Access to Repository",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/private-access/users/{{userId}}",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/users-with-access",
               "host": ["{{baseUrl}}"],
               "path": [
                 "workspaces",
                 "{{workspaceId}}",
                 "repositories",
                 "{{repositoryId}}",
-                "private-access",
-                "users",
-                "{{userId}}"
+                "users-with-access"
               ]
             },
-            "description": "Check if a specific user has access to this private repository and what permissions they have. Returns their whitelist entry or { hasAccess: false }."
+            "description": "Mission 2: Get all users who have access to this repository (public or private). Shows final merged permissions and access source (group, user-override, or both)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/users-with-access",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "repositories",
+                    "{{repositoryId}}",
+                    "users-with-access"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"repositoryId\": \"uuid\",\n  \"repositoryName\": \"My Private Repo\",\n  \"isPrivate\": true,\n  \"usersWithAccess\": [\n    {\n      \"userId\": \"uuid\",\n      \"username\": \"John Doe\",\n      \"email\": \"john.doe@example.com\",\n      \"groupName\": \"admin\",\n      \"accessSource\": \"group\",\n      \"permissions\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": true\n      }\n    },\n    {\n      \"userId\": \"uuid\",\n      \"username\": \"Jane Smith\",\n      \"email\": \"jane.smith@example.com\",\n      \"groupName\": \"viewer\",\n      \"accessSource\": \"user-override\",\n      \"permissions\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": false\n      }\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get User's Permissions in Workspace",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/users/{{userId}}/permissions",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "users",
+                "{{userId}}",
+                "permissions"
+              ]
+            },
+            "description": "Get a user's complete final permissions in a workspace (group permissions + user overrides merged)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/users/{{userId}}/permissions",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "users",
+                    "{{userId}}",
+                    "permissions"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"userId\": \"uuid\",\n  \"workspaceId\": \"uuid\",\n  \"groupId\": \"uuid\",\n  \"groupName\": \"editor\",\n  \"hasOverrides\": true,\n  \"finalPermissions\": {\n    \"read\": true,\n    \"write\": true,\n    \"delete\": false,\n    \"membersManagement\": {\n      \"read\": true,\n      \"write\": false,\n      \"delete\": false\n    },\n    \"repository\": {\n      \"public\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": false\n      },\n      \"private\": {\n        \"repo-uuid-1\": {\n          \"read\": true,\n          \"write\": true,\n          \"delete\": false\n        }\n      }\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get My Permissions in Workspace",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/my-permissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "{{workspaceId}}", "my-permissions"]
+            },
+            "description": "Get your own complete final permissions in a workspace (group permissions + user overrides merged)."
           },
           "response": []
         },
         {
-          "name": "Revoke User Access to Private Repository",
+          "name": "Revoke Repository Permissions from User",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/private-access/users/{{userId}}",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/permissions/users/{{userId}}",
               "host": ["{{baseUrl}}"],
               "path": [
                 "workspaces",
                 "{{workspaceId}}",
                 "repositories",
                 "{{repositoryId}}",
-                "private-access",
+                "permissions",
                 "users",
                 "{{userId}}"
               ]
             },
-            "description": "Remove a user from the private repository whitelist. They will lose access to this private repository, regardless of their role permissions."
+            "description": "Remove user-specific permission overrides for a repository. The user will fall back to their group permissions."
           },
           "response": []
         }
@@ -1823,70 +1856,6 @@
             }
           ],
           "description": "Get connection pool statistics (admin only). Returns detailed metrics about active connections, connection types, and workspace distribution. Requires workspace manage permissions."
-        }
-      ]
-    },
-    {
-      "name": "Admin Management",
-      "description": "Endpoints for managing workspace admin privileges. Workspace owners and admin members can promote/demote members.",
-      "item": [
-        {
-          "name": "Promote Member to Admin",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"isAdmin\": true\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId}}/admin",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "members",
-                "{{userId}}",
-                "admin"
-              ]
-            },
-            "description": "Promotes a workspace member to admin. Admin members have full access to all workspace operations, bypassing role-based permissions. Only workspace owners and existing admin members can promote others."
-          },
-          "response": []
-        },
-        {
-          "name": "Revoke Admin Privileges",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"isAdmin\": false\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId}}/admin",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "members",
-                "{{userId}}",
-                "admin"
-              ]
-            },
-            "description": "Revokes admin privileges from a workspace member. The member will fall back to role-based permissions. Only workspace owners and admin members can revoke admin privileges."
-          },
-          "response": []
         }
       ]
     },
