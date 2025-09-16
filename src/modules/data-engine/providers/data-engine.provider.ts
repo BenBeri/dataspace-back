@@ -8,9 +8,11 @@ import {
 } from '@nestjs/common';
 import { QueryExecutionService } from '../services/query-execution.service';
 import { ConnectionPoolService } from '../services/connection-pool.service';
-import { DataSourceService } from '../../platform/repository/services/data-source.service';
 import { RepositoryService } from '../../platform/repository/services/repository.service';
+import { RepositoryFacade } from '../../platform/repository/facades/repository.facade';
 import { WorkspaceService } from '../../platform/workspace/services/workspace.service';
+import { WorkspaceMemberService } from '../../platform/workspace/services/workspace-member.service';
+import { CredentialsResolverService } from '../../platform/repository/services/credentials-resolver.service';
 import { KEY_MANAGEMENT_SERVICE } from '../../platform/key-management/key-management.module';
 import type { IKeyManagementService } from '../../platform/key-management/interfaces/key-management.interface';
 import { DataSourceType } from '../../platform/entities/enums/data-source-type.enum';
@@ -31,9 +33,11 @@ export class DataEngineProvider {
   constructor(
     private readonly queryExecutionService: QueryExecutionService,
     private readonly connectionPoolService: ConnectionPoolService,
-    private readonly dataSourceService: DataSourceService,
     private readonly repositoryService: RepositoryService,
+    private readonly repositoryFacade: RepositoryFacade,
     private readonly workspaceService: WorkspaceService,
+    private readonly workspaceMemberService: WorkspaceMemberService,
+    private readonly credentialsResolverService: CredentialsResolverService,
     @Inject(KEY_MANAGEMENT_SERVICE)
     private readonly keyManagementService: IKeyManagementService,
   ) {}
@@ -60,14 +64,14 @@ export class DataEngineProvider {
   }
 
   /**
-   * Execute a query on a specific data source
+   * Execute a query on a repository's database connection
    * Main entry point for database operations
    * Provider orchestrates between services following architecture conventions
    */
   async executeQuery(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
+    userId: string,
     query: string,
     params?: any[],
   ): Promise<{
@@ -80,11 +84,11 @@ export class DataEngineProvider {
     const startTime = Date.now();
 
     try {
-      // Provider orchestration: Get connection through proper service coordination
+      // Provider orchestration: Get user-specific connection through proper service coordination
       const connection = await this.getConnection(
         workspaceId,
         repositoryId,
-        dataSourceId,
+        userId,
       );
 
       // Execute query through service layer
@@ -106,7 +110,7 @@ export class DataEngineProvider {
     } catch (error) {
       const executionTime = Date.now() - startTime;
       this.logger.error(
-        `Query execution failed for dataSource:${dataSourceId}: ${error.message}`,
+        `Query execution failed for repository:${repositoryId} and user:${userId}: ${error.message}`,
       );
 
       throw new BadRequestException(`Query execution failed: ${error.message}`);
@@ -119,7 +123,7 @@ export class DataEngineProvider {
   async executeBatchQueries(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
+    userId: string,
     queries: Array<{ query: string; params?: any[] }>,
   ): Promise<{
     success: boolean;
@@ -130,11 +134,11 @@ export class DataEngineProvider {
     const startTime = Date.now();
 
     try {
-      // Provider orchestration: Get connection through proper service coordination
+      // Provider orchestration: Get user-specific connection through proper service coordination
       const connection = await this.getConnection(
         workspaceId,
         repositoryId,
-        dataSourceId,
+        userId,
       );
 
       // Execute batch queries through service layer
@@ -154,7 +158,7 @@ export class DataEngineProvider {
     } catch (error) {
       const totalExecutionTime = Date.now() - startTime;
       this.logger.error(
-        `Batch query execution failed for dataSource:${dataSourceId}: ${error.message}`,
+        `Batch query execution failed for repository:${repositoryId} and user:${userId}: ${error.message}`,
       );
 
       throw new BadRequestException(
@@ -169,7 +173,7 @@ export class DataEngineProvider {
   async executeTransaction<T = any>(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
+    userId: string,
     operations: (client: any) => Promise<T>,
   ): Promise<{
     success: boolean;
@@ -180,11 +184,11 @@ export class DataEngineProvider {
     const startTime = Date.now();
 
     try {
-      // Provider orchestration: Get connection through proper service coordination
+      // Provider orchestration: Get user-specific connection through proper service coordination
       const connection = await this.getConnection(
         workspaceId,
         repositoryId,
-        dataSourceId,
+        userId,
       );
 
       // Execute transaction through service layer
@@ -204,7 +208,7 @@ export class DataEngineProvider {
     } catch (error) {
       const executionTime = Date.now() - startTime;
       this.logger.error(
-        `Transaction failed for dataSource:${dataSourceId}: ${error.message}`,
+        `Transaction failed for repository:${repositoryId} and user:${userId}: ${error.message}`,
       );
 
       throw new BadRequestException(`Transaction failed: ${error.message}`);
@@ -212,16 +216,15 @@ export class DataEngineProvider {
   }
 
   /**
-   * Get connection status for a data source
+   * Get connection status for a repository
    */
   async getConnectionStatus(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
+    userId: string,
   ): Promise<{
     workspaceId: string;
     repositoryId: string;
-    dataSourceId: string;
     type: DataSourceType | null;
     status: 'healthy' | 'unhealthy' | 'disconnected';
     connectedAt?: Date;
@@ -229,11 +232,11 @@ export class DataEngineProvider {
     error?: string;
   }> {
     try {
-      // Provider orchestration: Get connection through proper service coordination
+      // Provider orchestration: Get user-specific connection through proper service coordination
       const connection = await this.getConnection(
         workspaceId,
         repositoryId,
-        dataSourceId,
+        userId,
       );
 
       // Test connection health through service layer
@@ -244,7 +247,6 @@ export class DataEngineProvider {
         return {
           workspaceId,
           repositoryId,
-          dataSourceId,
           type: connection.type,
           status: 'healthy',
           connectedAt: connection.createdAt,
@@ -254,7 +256,6 @@ export class DataEngineProvider {
         return {
           workspaceId,
           repositoryId,
-          dataSourceId,
           type: healthCheck.type,
           status: 'unhealthy',
           responseTime: healthCheck.responseTime,
@@ -265,7 +266,6 @@ export class DataEngineProvider {
       return {
         workspaceId,
         repositoryId,
-        dataSourceId,
         type: null,
         status: 'disconnected',
         error: error.message,
@@ -274,20 +274,19 @@ export class DataEngineProvider {
   }
 
   /**
-   * Get all data sources for a repository with their connection status
+   * Get repository connection information
    */
-  async getRepositoryDataSources(
+  async getRepositoryConnectionInfo(
     workspaceId: string,
     repositoryId: string,
-  ): Promise<
-    Array<{
-      dataSourceId: string;
-      name: string;
-      type: DataSourceType;
-      status: 'healthy' | 'unhealthy' | 'disconnected';
-      connectedAt?: Date;
-    }>
-  > {
+    userId: string,
+  ): Promise<{
+    repositoryId: string;
+    credentialsName: string | null;
+    type: DataSourceType;
+    status: 'healthy' | 'unhealthy' | 'disconnected' | 'no-connection';
+    connectedAt?: Date;
+  }> {
     try {
       // Validate repository access
       const repository =
@@ -297,53 +296,51 @@ export class DataEngineProvider {
         throw new ForbiddenException('Repository does not belong to workspace');
       }
 
-      // Get data source for repository (currently only supports one per repository)
-      // In the future, this could be extended to support multiple data sources
-      const dataSource =
-        await this.dataSourceService.getDataSourceByRepositoryId(repositoryId);
-      const dataSources = dataSource ? [dataSource] : [];
+      // Check if user can access any credentials for this repository
+      const canAccess =
+        await this.credentialsResolverService.canUserAccessRepository(
+          repositoryId,
+          userId,
+          await this.getUserGroupsInWorkspace(workspaceId, userId),
+        );
 
-      const result: Array<{
-        dataSourceId: string;
-        name: string;
-        type: DataSourceType;
-        status: 'healthy' | 'unhealthy' | 'disconnected';
-        connectedAt?: Date;
-      }> = [];
-
-      for (const dataSource of dataSources) {
-        try {
-          // Use getConnection to follow proper orchestration pattern
-          const connection = await this.getConnection(
-            workspaceId,
-            repositoryId,
-            dataSource.id,
-          );
-          const healthCheck =
-            await this.queryExecutionService.testConnection(connection);
-
-          result.push({
-            dataSourceId: dataSource.id,
-            name: dataSource.name,
-            type: connection.type,
-            status: healthCheck.healthy ? 'healthy' : 'unhealthy',
-            connectedAt: connection.createdAt,
-          });
-        } catch {
-          // If connection failed, get database type from repository
-          result.push({
-            dataSourceId: dataSource.id,
-            name: dataSource.name,
-            type: repository.type,
-            status: 'disconnected' as const,
-          });
-        }
+      if (!canAccess) {
+        return {
+          repositoryId,
+          credentialsName: null,
+          type: repository.type,
+          status: 'no-connection',
+        };
       }
 
-      return result;
+      try {
+        // Test connection health with user-specific credentials
+        const connection = await this.getConnection(
+          workspaceId,
+          repositoryId,
+          userId,
+        );
+        const healthCheck =
+          await this.queryExecutionService.testConnection(connection);
+
+        return {
+          repositoryId,
+          credentialsName: credentials.name,
+          type: connection.type,
+          status: healthCheck.healthy ? 'healthy' : 'unhealthy',
+          connectedAt: connection.createdAt,
+        };
+      } catch {
+        return {
+          repositoryId,
+          credentialsName: credentials?.name || null,
+          type: repository.type,
+          status: 'disconnected',
+        };
+      }
     } catch (error) {
       this.logger.error(
-        `Failed to get repository data sources for ${repositoryId}: ${error.message}`,
+        `Failed to get repository connection info for ${repositoryId}: ${error.message}`,
       );
       throw error;
     }
@@ -356,18 +353,18 @@ export class DataEngineProvider {
   async getNativeClient(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
+    userId: string,
   ): Promise<{
     client: any;
     type: DataSourceType;
     warning: string;
   }> {
     try {
-      // Provider orchestration: Get connection through proper service coordination
+      // Provider orchestration: Get user-specific connection through proper service coordination
       const connection = await this.getConnection(
         workspaceId,
         repositoryId,
-        dataSourceId,
+        userId,
       );
 
       // Get native client through service layer
@@ -381,7 +378,7 @@ export class DataEngineProvider {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to get native client for dataSource:${dataSourceId}: ${error.message}`,
+        `Failed to get native client for repository:${repositoryId} and user:${userId}: ${error.message}`,
       );
       throw new BadRequestException(
         `Failed to get native client: ${error.message}`,
@@ -390,38 +387,33 @@ export class DataEngineProvider {
   }
 
   /**
-   * Disconnect a specific data source connection
+   * Disconnect a repository connection
    */
-  async disconnectDataSource(
+  async disconnectRepository(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
   ): Promise<{ success: boolean; message: string }> {
     try {
       // Validate access permissions
-      await this.validateDataSourceAccess(
-        workspaceId,
-        repositoryId,
-        dataSourceId,
-      );
+      await this.validateRepositoryAccess(workspaceId, repositoryId);
 
       // Remove connection from pool
       await this.connectionPoolService.removeConnection(
         workspaceId,
         repositoryId,
-        dataSourceId,
+        repositoryId, // Using repositoryId as the connection identifier
       );
 
       return {
         success: true,
-        message: `Data source ${dataSourceId} disconnected successfully`,
+        message: `Repository ${repositoryId} disconnected successfully`,
       };
     } catch (error) {
       this.logger.error(
-        `Failed to disconnect dataSource:${dataSourceId}: ${error.message}`,
+        `Failed to disconnect repository:${repositoryId}: ${error.message}`,
       );
       throw new BadRequestException(
-        `Failed to disconnect data source: ${error.message}`,
+        `Failed to disconnect repository: ${error.message}`,
       );
     }
   }
@@ -515,14 +507,13 @@ export class DataEngineProvider {
   }
 
   /**
-   * Test database connection using an existing DataSource entity
-   * Retrieves and decrypts credentials from the DataSource, then tests the connection
+   * Test database connection using an existing Repository's connection configuration
+   * Retrieves and decrypts credentials from the Repository, then tests the connection
    * Provider orchestration: Coordinates between services to get decrypted config and test connection
    */
-  async testConnectionFromDataSource(
+  async testConnectionFromRepository(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
     timeoutMs?: number,
   ): Promise<{
     success: boolean;
@@ -537,14 +528,10 @@ export class DataEngineProvider {
     };
   }> {
     try {
-      this.logger.debug(`Testing connection for dataSource:${dataSourceId}`);
+      this.logger.debug(`Testing connection for repository:${repositoryId}`);
 
       // Provider orchestration: Validate access and get data
-      await this.validateDataSourceAccess(
-        workspaceId,
-        repositoryId,
-        dataSourceId,
-      );
+      await this.validateRepositoryAccess(workspaceId, repositoryId);
 
       // Get repository to determine database type
       const repository =
@@ -553,14 +540,12 @@ export class DataEngineProvider {
         throw new NotFoundException(`Repository ${repositoryId} not found`);
       }
 
-      // Get data source and decrypt configuration
+      // Get repository connection configuration
       const decryptedConfig =
-        await this.dataSourceService.getDecryptedConfigurationById(
-          dataSourceId,
-        );
+        await this.repositoryFacade.getConnectionConfiguration(repositoryId);
       if (!decryptedConfig) {
         throw new NotFoundException(
-          `No configuration found for data source ${dataSourceId}`,
+          `No connection configuration found for repository ${repositoryId}`,
         );
       }
 
@@ -572,14 +557,14 @@ export class DataEngineProvider {
       );
 
       this.logger.log(
-        `DataSource connection test completed for ${dataSourceId}: ${result.success ? 'SUCCESS' : 'FAILED'} ` +
+        `Repository connection test completed for ${repositoryId}: ${result.success ? 'SUCCESS' : 'FAILED'} ` +
           `(${result.responseTime}ms)`,
       );
 
       return result;
     } catch (error) {
       this.logger.error(
-        `DataSource connection test failed for ${dataSourceId}: ${error.message}`,
+        `Repository connection test failed for ${repositoryId}: ${error.message}`,
       );
 
       throw new BadRequestException(`Connection test failed: ${error.message}`);
@@ -652,22 +637,18 @@ export class DataEngineProvider {
   }
 
   /**
-   * Get database connection for a data source
+   * Get database connection for a repository with user-specific credentials
    * Provider orchestration: Coordinates between services to get connection
    * This is where service-to-service coordination happens at the provider level
    */
   private async getConnection(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
+    userId: string,
   ): Promise<IDatabaseConnection> {
     try {
-      // 1. Validate data source access - Provider orchestration
-      await this.validateDataSourceAccess(
-        workspaceId,
-        repositoryId,
-        dataSourceId,
-      );
+      // 1. Validate repository access - Provider orchestration
+      await this.validateRepositoryAccess(workspaceId, repositoryId);
 
       // 2. Get repository information to get database type
       const repository =
@@ -677,75 +658,97 @@ export class DataEngineProvider {
         throw new NotFoundException(`Repository ${repositoryId} not found`);
       }
 
-      // 3. Get data source information
-      const dataSource =
-        await this.dataSourceService.getDataSourceById(dataSourceId);
+      // 3. Get user's groups in the workspace for credentials resolution
+      const userGroupIds = await this.getUserGroupsInWorkspace(
+        workspaceId,
+        userId,
+      );
 
-      if (!dataSource) {
-        throw new NotFoundException(`Data source ${dataSourceId} not found`);
-      }
-
-      // 4. Get decrypted configuration using existing KMS integration
-      const decryptedConfig =
-        await this.dataSourceService.getDecryptedConfigurationById(
-          dataSourceId,
+      // 4. Resolve user-specific credentials using the new credentials system
+      const credentialsResult =
+        await this.credentialsResolverService.resolveCredentialsForUser(
+          repositoryId,
+          userId,
+          userGroupIds,
         );
 
-      if (!decryptedConfig) {
-        throw new NotFoundException(
-          `No configuration found for data source ${dataSourceId}`,
-        );
-      }
+      // 5. Decrypt the resolved credentials
+      const decryptedConfig = await this.keyManagementService.decrypt(
+        credentialsResult.credentials.encryptedCredentials,
+      );
+      const parsedConfig = JSON.parse(decryptedConfig);
 
-      // 5. Get database type from repository (not from data source configuration)
+      this.logger.debug(
+        `Using ${credentialsResult.accessType} credentials "${credentialsResult.credentials.name}" for user ${userId} on repository ${repositoryId}`,
+      );
+
+      // 6. Get database type from repository
       const dbType = repository.type;
 
-      // 6. Use connection pool service to get/create connection
+      // 7. Create unique connection identifier for user-specific credentials
+      // Format: repositoryId:credentialsId:userId (for user-specific caching)
+      const connectionIdentifier = `${repositoryId}:${credentialsResult.credentials.id}:${userId}`;
+
+      // 8. Use connection pool service to get/create connection with user-specific credentials
       const connection = await this.connectionPoolService.getConnection(
         workspaceId,
         repositoryId,
-        dataSourceId,
+        connectionIdentifier,
         dbType,
-        decryptedConfig,
+        parsedConfig,
       );
 
       return connection;
     } catch (error) {
       this.logger.error(
-        `Failed to get connection for dataSource:${dataSourceId}: ${error.message}`,
+        `Failed to get connection for repository ${repositoryId} and user ${userId}: ${error.message}`,
       );
       throw error;
     }
   }
 
   /**
-   * Validate user has access to the specified data source
+   * Get user's group IDs in a workspace for credentials resolution
+   */
+  private async getUserGroupsInWorkspace(
+    workspaceId: string,
+    userId: string,
+  ): Promise<string[]> {
+    try {
+      // Get workspace membership to find user's groups
+      const workspaceMember =
+        await this.workspaceMemberService.getMemberByWorkspaceAndUser(
+          workspaceId,
+          userId,
+        );
+
+      // Return the user's group ID (in the current system, each user has one group/role)
+      return workspaceMember.groupId ? [workspaceMember.groupId] : [];
+    } catch (error) {
+      this.logger.warn(
+        `Failed to get user groups for user ${userId} in workspace ${workspaceId}: ${error.message}`,
+      );
+      return []; // Return empty array if unable to determine groups
+    }
+  }
+
+  /**
+   * Validate user has access to the specified repository
    * Provider orchestration between services
    */
-  private async validateDataSourceAccess(
+  private async validateRepositoryAccess(
     workspaceId: string,
     repositoryId: string,
-    dataSourceId: string,
   ): Promise<void> {
-    // Get data source and validate it exists
-    const dataSource =
-      await this.dataSourceService.getDataSourceById(dataSourceId);
-
-    if (!dataSource) {
-      throw new NotFoundException(`Data source ${dataSourceId} not found`);
-    }
-
-    // Validate data source belongs to repository
-    if (dataSource.repositoryId !== repositoryId) {
-      throw new ForbiddenException(
-        `Data source ${dataSourceId} does not belong to repository ${repositoryId}`,
-      );
-    }
-
-    // Validate repository belongs to workspace
+    // Get repository and validate it exists
     const repository =
       await this.repositoryService.getRepositoryById(repositoryId);
 
+    if (!repository) {
+      throw new NotFoundException(`Repository ${repositoryId} not found`);
+    }
+
+    // Validate repository belongs to workspace
     if (repository.workspaceId !== workspaceId) {
       throw new ForbiddenException(
         `Repository ${repositoryId} does not belong to workspace ${workspaceId}`,

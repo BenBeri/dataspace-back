@@ -1,10 +1,10 @@
 {
   "info": {
     "name": "Dataspace API",
-    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, Repositories and Data Sources management. Now featuring CASL-based permission system with workspace owner privileges, group-based permissions, and user-specific permission overrides. Mission 1 & 2 complete: Hierarchical permission system with deep merge logic for user-specific overrides.",
+    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, and Repositories management. Features CASL-based permission system with workspace owner privileges, group-based permissions, and user-specific permission overrides. Includes advanced multi-credential system allowing different users/groups to have different database credentials with varying permission levels for the same repository. Data Engine operations automatically resolve user-specific credentials based on priority: user-specific > group-based > default access.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "dataspace-api-collection",
-    "version": "5.0.0"
+    "version": "7.0.0"
   },
   "variable": [
     {
@@ -36,16 +36,16 @@
       "description": "UUID of a repository for testing repository endpoints"
     },
     {
-      "key": "dataSourceId",
-      "value": "",
-      "type": "string",
-      "description": "UUID of a data source for testing data source endpoints"
-    },
-    {
       "key": "userId",
       "value": "",
       "type": "string",
       "description": "UUID of a user for testing user-related endpoints"
+    },
+    {
+      "key": "credentialsId",
+      "value": "",
+      "type": "string",
+      "description": "UUID of repository credentials for testing credential endpoints"
     }
   ],
   "auth": {
@@ -772,10 +772,10 @@
     },
     {
       "name": "Repositories",
-      "description": "CRUD operations for repositories with workspace-based permissions. Repositories now have database types at the repository level, and can contain multiple data sources.",
+      "description": "CRUD operations for repositories with workspace-based permissions. Each repository has a database type and can have one connection configuration for accessing the database.",
       "item": [
         {
-          "name": "Create Repository (No Data Sources)",
+          "name": "Create Repository",
           "event": [
             {
               "listen": "test",
@@ -789,7 +789,7 @@
                   "        pm.collectionVariables.set('repositoryId', response.id);",
                   "        console.log('Repository ID saved:', response.id);",
                   "        console.log('Repository type:', response.type);",
-                  "        console.log('Data sources:', response.dataSources ? response.dataSources.length : 0);",
+                  "        console.log('Has connection:', response.hasConnection);",
                   "    }",
                   "}"
                 ]
@@ -806,66 +806,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"My PostgreSQL Repository\",\n  \"repositoryNameKey\": \"my-postgres-repo\",\n  \"description\": \"A PostgreSQL repository without initial data sources\",\n  \"type\": \"postgres\",\n  \"isPrivate\": false\n}"
+              "raw": "{\n  \"name\": \"My PostgreSQL Repository\",\n  \"description\": \"A PostgreSQL repository for database operations\",\n  \"type\": \"postgres\",\n  \"isPrivate\": false\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "{{workspaceId}}", "repositories"]
             },
-            "description": "Creates a repository without initial data sources. The repository has a database type (POSTGRESQL, MYSQL, MONGODB, etc.) and data sources can be added later. The repositoryNameKey must contain only lowercase letters, numbers, and single dashes (max 32 characters)."
+            "description": "Creates a repository with a specified database type. Connection configuration can be set separately using the connection endpoints."
           },
           "response": []
         },
         {
-          "name": "Create Repository with Multiple Data Sources",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// Extract and save the repository ID from response",
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.id) {",
-                  "        pm.collectionVariables.set('repositoryId', response.id);",
-                  "        console.log('Repository ID saved:', response.id);",
-                  "        console.log('Repository type:', response.type);",
-                  "        if (response.dataSources && response.dataSources.length > 0) {",
-                  "            pm.collectionVariables.set('dataSourceId', response.dataSources[0].id);",
-                  "            console.log('First Data Source ID saved:', response.dataSources[0].id);",
-                  "            console.log('Total data sources created:', response.dataSources.length);",
-                  "        }",
-                  "    }",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Multi-Environment PostgreSQL\",\n  \"repositoryNameKey\": \"multi-env-postgres\",\n  \"description\": \"PostgreSQL repository with multiple environment data sources\",\n  \"type\": \"postgres\",\n  \"isPrivate\": false,\n  \"dataSources\": [\n    {\n      \"name\": \"Development Database\",\n      \"configuration\": {\n        \"host\": \"localhost\",\n        \"port\": 5432,\n        \"database\": \"dev_database\",\n        \"username\": \"dev_user\",\n        \"password\": \"dev_password\",\n        \"ssl\": false\n      }\n    },\n    {\n      \"name\": \"Staging Database\",\n      \"configuration\": {\n        \"host\": \"staging.db.example.com\",\n        \"port\": 5432,\n        \"database\": \"staging_database\",\n        \"username\": \"staging_user\",\n        \"password\": \"staging_password\",\n        \"ssl\": true\n      }\n    },\n    {\n      \"name\": \"Production Database\",\n      \"configuration\": {\n        \"host\": \"prod.db.example.com\",\n        \"port\": 5432,\n        \"database\": \"prod_database\",\n        \"username\": \"prod_user\",\n        \"password\": \"prod_password\",\n        \"ssl\": true,\n        \"connectionLimit\": 20\n      }\n    }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
-              "host": ["{{baseUrl}}"],
-              "path": ["workspaces", "{{workspaceId}}", "repositories"]
-            },
-            "description": "Creates a repository with multiple data sources. All data sources belong to the same database type (specified at repository level). This example creates a PostgreSQL repository with development, staging, and production data sources."
-          },
-          "response": []
-        },
-        {
-          "name": "Create MongoDB Repository",
+          "name": "Create Private MongoDB Repository",
           "event": [
             {
               "listen": "test",
@@ -878,6 +831,7 @@
                   "    if (response.id) {",
                   "        pm.collectionVariables.set('repositoryId', response.id);",
                   "        console.log('MongoDB Repository ID saved:', response.id);",
+                  "        console.log('Repository is private:', response.isPrivate);",
                   "    }",
                   "}"
                 ]
@@ -894,14 +848,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Document Storage\",\n  \"description\": \"MongoDB repository for document storage\",\n  \"type\": \"mongodb\",\n  \"isPrivate\": true,\n  \"dataSources\": [\n    {\n      \"name\": \"Primary Cluster\",\n      \"configuration\": {\n        \"connectionString\": \"mongodb://localhost:27017/documents\",\n        \"authDatabase\": \"admin\",\n        \"username\": \"mongo_user\",\n        \"password\": \"mongo_password\"\n      }\n    }\n  ]\n}"
+              "raw": "{\n  \"name\": \"Document Storage\",\n  \"description\": \"MongoDB repository for document storage\",\n  \"type\": \"mongodb\",\n  \"isPrivate\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories",
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "{{workspaceId}}", "repositories"]
             },
-            "description": "Creates a MongoDB repository (private) with a single data source. Repository type is set to MONGODB and all data sources inherit this type. Note: Private repositories use the new whitelist system - users must be explicitly granted access via the Private Repository Access endpoints."
+            "description": "Creates a private MongoDB repository. Connection configuration can be set after creation. Private repositories require explicit user access grants via the Permission Management endpoints."
           },
           "response": []
         },
@@ -933,7 +887,7 @@
                 }
               ]
             },
-            "description": "Gets paginated list of repositories in a specific workspace. Response includes repository type and array of data sources. Private repositories are only shown if user has explicit access or is workspace owner/admin."
+            "description": "Gets paginated list of repositories in a specific workspace. Response includes repository type and connection status. Private repositories are only shown if user has explicit access or is workspace owner/admin."
           },
           "response": []
         },
@@ -952,7 +906,7 @@
                 "{{repositoryId}}"
               ]
             },
-            "description": "Gets a specific repository by ID. Response includes repository type, all data sources, and workspace details."
+            "description": "Gets a specific repository by ID. Response includes repository type, connection status, and workspace details."
           },
           "response": []
         },
@@ -980,7 +934,7 @@
                 "{{repositoryId}}"
               ]
             },
-            "description": "Updates a repository including its database type. Note: Changing the database type affects all data sources in the repository - ensure compatibility."
+            "description": "Updates a repository including its database type. Note: Changing the database type may affect the compatibility of existing connection configurations."
           },
           "response": []
         },
@@ -999,9 +953,503 @@
                 "{{repositoryId}}"
               ]
             },
-            "description": "Deletes a repository and all its associated data sources. The operation is cascaded - deleting the repository also removes all data sources and their change history."
+            "description": "Deletes a repository and all its associated data including connection configuration and connection history. The operation is cascaded."
           },
           "response": []
+        },
+        {
+          "name": "Set Repository Connection Configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"connectionName\": \"Production Database\",\n  \"configuration\": {\n    \"host\": \"prod.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"prod_database\",\n    \"username\": \"prod_user\",\n    \"password\": \"prod_password\",\n    \"ssl\": true,\n    \"connectionLimit\": 20\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "connection"
+              ]
+            },
+            "description": "Sets the connection configuration for a repository. Configuration is encrypted before storage and tracked in connection history."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Repository Connection Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection/configuration",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "connection",
+                "configuration"
+              ]
+            },
+            "description": "Gets the decrypted connection configuration for a repository. Returns null if no configuration is set."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Repository Connection Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection/status",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "connection",
+                "status"
+              ]
+            },
+            "description": "Checks whether the repository has a connection configuration set."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Repository Connection Configuration",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"connectionName\": \"Updated Production Database\",\n  \"configuration\": {\n    \"host\": \"new-prod.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"new_prod_database\",\n    \"username\": \"new_prod_user\",\n    \"password\": \"new_prod_password\",\n    \"ssl\": true,\n    \"connectionLimit\": 25,\n    \"connectionTimeout\": 30000\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "connection"
+              ]
+            },
+            "description": "Updates the connection configuration for a repository. Both connectionName and configuration are optional. Changes are tracked in connection history."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Repository Connection Configuration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "connection"
+              ]
+            },
+            "description": "Removes the connection configuration from a repository. This action is tracked in connection history."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Repository Connection History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection/history?offset=0&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "connection",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of records to skip (default: 0)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of history records to return (default: 10, max: 100)"
+                }
+              ]
+            },
+            "description": "Gets paginated connection history for a repository. Shows all modifications made to the connection configuration with user attribution and timestamps."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Repository Credentials Management",
+      "description": "Advanced multi-credential system for repositories. Each repository can have multiple credential sets (full-access, read-only, analytics, etc.) with granular access control for users and groups. Includes default fallback credentials and priority-based resolution: user-specific > group-based > default access.",
+      "item": [
+        {
+          "name": "Create Repository Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"read-only\",\n  \"description\": \"Read-only access for data analysts\",\n  \"configuration\": {\n    \"host\": \"readonly.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"analytics\",\n    \"username\": \"readonly_user\",\n    \"password\": \"readonly_pass\",\n    \"ssl\": true\n  },\n  \"isDefault\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials"
+              ]
+            },
+            "description": "Create new credentials for a repository. Each credential set has a unique name (e.g., 'full-access', 'read-only'), description, and encrypted database configuration. Can be marked as default for fallback access."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Repository Credentials",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials"
+              ]
+            },
+            "description": "Get all credential sets for a repository with their access information, including user/group access entries and default status."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Repository Credentials",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"updated-read-only\",\n  \"description\": \"Updated read-only access\",\n  \"configuration\": {\n    \"host\": \"new-readonly.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"analytics\",\n    \"username\": \"new_readonly_user\",\n    \"password\": \"new_readonly_pass\",\n    \"ssl\": true\n  },\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}"
+              ]
+            },
+            "description": "Update existing credentials configuration, name, description, or active status. Configuration changes are encrypted before storage."
+          },
+          "response": []
+        },
+        {
+          "name": "Set Credentials as Default",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}/set-default",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}",
+                "set-default"
+              ]
+            },
+            "description": "Set specific credentials as the default for this repository. Removes default status from other credentials and makes this the fallback for users without specific access."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Repository Credentials",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}"
+              ]
+            },
+            "description": "Delete credentials and all associated access entries. Cannot delete if it's the only default credentials set for the repository."
+          },
+          "response": []
+        },
+        {
+          "name": "Grant User Access to Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"notes\": \"Granting analyst access to read-only credentials\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}/access/users",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}",
+                "access",
+                "users"
+              ]
+            },
+            "description": "Grant a specific user direct access to these credentials. User-specific access has the highest priority in credential resolution."
+          },
+          "response": []
+        },
+        {
+          "name": "Grant Group Access to Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"{{groupId}}\",\n  \"notes\": \"Granting analyst group access to read-only credentials\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}/access/groups",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}",
+                "access",
+                "groups"
+              ]
+            },
+            "description": "Grant a specific group access to these credentials. Group-based access applies to all members of the group and has medium priority in credential resolution."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Default Access for Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Default access for all repository users\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}/access/default",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}",
+                "access",
+                "default"
+              ]
+            },
+            "description": "Create default access entry - makes credentials available to all repository users as fallback. Default access has the lowest priority in credential resolution."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Credentials Access List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}/access",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}",
+                "access"
+              ]
+            },
+            "description": "Get all access entries for specific credentials showing users, groups, and default access with grant details and timestamps."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke User Access to Credentials",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}/access/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}",
+                "access",
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "Revoke user access to specific credentials. User will fall back to group-based or default access if available."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Group Access to Credentials",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/{{credentialsId}}/access/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "{{credentialsId}}",
+                "access",
+                "groups",
+                "{{groupId}}"
+              ]
+            },
+            "description": "Revoke group access to specific credentials. Group members will fall back to user-specific or default access if available."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Credentials for User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/available",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials",
+                "available"
+              ]
+            },
+            "description": "Get all credentials that the current user has access to for this repository, showing access type (user-specific, group-based, or default) and priority order for credential resolution."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/credentials/available",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "workspaces",
+                    "{{workspaceId}}",
+                    "repositories",
+                    "{{repositoryId}}",
+                    "credentials",
+                    "available"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"repositoryId\": \"uuid\",\n  \"availableCredentials\": [\n    {\n      \"credentials\": {\n        \"id\": \"uuid\",\n        \"name\": \"full-access\",\n        \"description\": \"Full database access\",\n        \"isDefault\": true,\n        \"isActive\": true\n      },\n      \"accessType\": \"user\",\n      \"accessDetails\": {\n        \"identityId\": \"user-uuid\",\n        \"identityType\": \"user\",\n        \"grantedBy\": \"admin-uuid\",\n        \"notes\": \"Direct user access\"\n      }\n    },\n    {\n      \"credentials\": {\n        \"id\": \"uuid\",\n        \"name\": \"read-only\",\n        \"description\": \"Read-only access\",\n        \"isDefault\": false,\n        \"isActive\": true\n      },\n      \"accessType\": \"group\",\n      \"accessDetails\": {\n        \"identityId\": \"group-uuid\",\n        \"identityType\": \"group\",\n        \"grantedBy\": \"admin-uuid\",\n        \"notes\": \"Group-based access\"\n      }\n    }\n  ]\n}"
+            }
+          ]
         }
       ]
     },
@@ -1169,210 +1617,8 @@
       ]
     },
     {
-      "name": "Data Sources",
-      "description": "Data source management endpoints. Data sources inherit the database type from their parent repository and can be managed independently.",
-      "item": [
-        {
-          "name": "Create Data Source",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// Extract and save the data source ID from response",
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.id) {",
-                  "        pm.collectionVariables.set('dataSourceId', response.id);",
-                  "        console.log('Data Source ID saved:', response.id);",
-                  "        console.log('Data Source name:', response.name);",
-                  "    }",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Testing Environment\",\n  \"configuration\": {\n    \"host\": \"test.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"test_database\",\n    \"username\": \"test_user\",\n    \"password\": \"test_password\",\n    \"ssl\": true,\n    \"connectionTimeout\": 30\n  }\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources"
-              ]
-            },
-            "description": "Creates a new data source within a repository. The data source inherits the database type from the repository (no type field needed). Configuration is encrypted before storage."
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Data Sources for Repository",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources"
-              ]
-            },
-            "description": "Gets all data sources associated with a repository. Response includes name, repositoryId, and timestamps but not configuration (use specific endpoint for configuration)."
-          },
-          "response": []
-        },
-        {
-          "name": "Get Data Source by ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}"
-              ]
-            },
-            "description": "Gets a specific data source by ID. Returns basic information without configuration. Use the configuration endpoint to get decrypted configuration."
-          },
-          "response": []
-        },
-        {
-          "name": "Get Data Source Configuration",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/configuration",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
-                "configuration"
-              ]
-            },
-            "description": "Gets the decrypted configuration for a specific data source. This endpoint returns both the data source metadata and the decrypted configuration object."
-          },
-          "response": []
-        },
-        {
-          "name": "Update Data Source",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Testing Environment\",\n  \"configuration\": {\n    \"host\": \"updated-test.db.example.com\",\n    \"port\": 5432,\n    \"database\": \"updated_test_database\",\n    \"username\": \"updated_test_user\",\n    \"password\": \"updated_test_password\",\n    \"ssl\": true,\n    \"connectionTimeout\": 60,\n    \"maxConnections\": 15\n  }\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}"
-              ]
-            },
-            "description": "Updates a data source. Both name and configuration are optional. Changes are tracked in the change history with user attribution. Configuration is encrypted before storage."
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Data Source",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}"
-              ]
-            },
-            "description": "Deletes a data source and all its associated change history. This removes the data source from the repository but doesn't affect other data sources."
-          },
-          "response": []
-        },
-        {
-          "name": "Get Data Source Change History",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/history?offset=0&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
-                "history"
-              ],
-              "query": [
-                {
-                  "key": "offset",
-                  "value": "0",
-                  "description": "Number of records to skip (default: 0)"
-                },
-                {
-                  "key": "limit",
-                  "value": "10",
-                  "description": "Number of history records to return (default: 10, max: 100)"
-                }
-              ]
-            },
-            "description": "Gets paginated change history for a data source. Shows all modifications made to the data source including name and configuration changes with user attribution and timestamps."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
       "name": "Data Engine",
-      "description": "Multi-database query execution endpoints. Execute queries, batch operations, and manage connections for various database types (PostgreSQL, MySQL, MongoDB, etc.).",
+      "description": "Database query execution and connection testing endpoints. Execute queries using user-specific credentials automatically resolved through the multi-credential system. Each user connects with different database permissions based on their credential access priority: user-specific grants > group membership > default credentials. All operations use the CredentialsResolverService for seamless credential resolution.",
       "item": [
         {
           "name": "Test Database Connection",
@@ -1393,162 +1639,20 @@
               "raw": "{{baseUrl}}/data-engine/test-connection",
               "host": ["{{baseUrl}}"],
               "path": ["data-engine", "test-connection"]
-            }
-          },
-          "response": [
-            {
-              "name": "Success Response - PostgreSQL",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"type\": \"postgres\",\n  \"config\": {\n    \"host\": \"localhost\",\n    \"port\": 5432,\n    \"username\": \"postgres\",\n    \"password\": \"password\",\n    \"database\": \"testdb\",\n    \"ssl\": false\n  },\n  \"timeoutMs\": 10000\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/data-engine/test-connection",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["data-engine", "test-connection"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"type\": \"postgres\",\n  \"message\": \"Connection test successful\",\n  \"responseTime\": 234,\n  \"serverInfo\": {\n    \"version\": \"PostgreSQL 16.1 on x86_64-pc-linux-gnu\",\n    \"serverName\": \"PostgreSQL\"\n  }\n}"
             },
-            {
-              "name": "Failed Response - Connection Error",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"type\": \"postgres\",\n  \"config\": {\n    \"host\": \"invalid-host\",\n    \"port\": 5432,\n    \"username\": \"postgres\",\n    \"password\": \"password\",\n    \"database\": \"testdb\",\n    \"ssl\": false\n  },\n  \"timeoutMs\": 10000\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/data-engine/test-connection",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["data-engine", "test-connection"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"success\": false,\n  \"type\": \"postgres\",\n  \"message\": \"Connection test failed\",\n  \"responseTime\": 5000,\n  \"error\": \"connect ENOTFOUND invalid-host\"\n}"
-            }
-          ]
+            "description": "Test database connection using provided credentials without requiring workspace or repository context."
+          },
+          "response": []
         },
         {
-          "name": "Test Encrypted Connection",
-          "description": "Test database connection using encrypted credentials from request body - requires workspace context for KMS decryption",
+          "name": "Test Repository Connection",
+          "description": "Test database connection using repository's stored configuration",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"type\": \"postgres\",\n  \"encryptedConfig\": \"eyJ0eXBlIjoicG9zdGdyZXMiLCJob3N0IjoibG9jYWxob3N0IiwicG9ydCI6NTQzMiwidXNlcm5hbWUiOiJwb3N0Z3JlcyIsInBhc3N3b3JkIjoicGFzc3dvcmQiLCJkYXRhYmFzZSI6InRlc3RkYiIsInNzbCI6ZmFsc2V9\",\n  \"timeoutMs\": 10000\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/data-engine/test-connection/encrypted/{{workspaceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "data-engine",
-                "test-connection",
-                "encrypted",
-                "{{workspaceId}}"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"type\": \"postgres\",\n  \"encryptedConfig\": \"eyJ0eXBlIjoicG9zdGdyZXMiLCJob3N0IjoibG9jYWxob3N0IiwicG9ydCI6NTQzMiwidXNlcm5hbWUiOiJwb3N0Z3JlcyIsInBhc3N3b3JkIjoicGFzc3dvcmQiLCJkYXRhYmFzZSI6InRlc3RkYiIsInNzbCI6ZmFsc2V9\",\n  \"timeoutMs\": 10000\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/data-engine/test-connection/encrypted/{{workspaceId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "data-engine",
-                    "test-connection",
-                    "encrypted",
-                    "{{workspaceId}}"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"type\": \"postgres\",\n  \"message\": \"Connection test successful\",\n  \"responseTime\": 187,\n  \"serverInfo\": {\n    \"version\": \"PostgreSQL 16.1 on x86_64-pc-linux-gnu\",\n    \"serverName\": \"PostgreSQL\"\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Test DataSource Connection",
-          "description": "Test database connection using existing DataSource entity - retrieves and decrypts credentials from DataSource",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
               }
             ],
             "body": {
@@ -1556,68 +1660,22 @@
               "raw": "{\n  \"timeoutMs\": 10000\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/test-connection",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/test-connection",
               "host": ["{{baseUrl}}"],
               "path": [
                 "workspaces",
                 "{{workspaceId}}",
                 "repositories",
                 "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
                 "test-connection"
               ]
-            }
+            },
+            "description": "Test database connection using the repository's credentials resolved for the current user. Uses the multi-credential system to automatically select the appropriate credentials based on user access priority."
           },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"timeoutMs\": 10000\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/test-connection",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "workspaces",
-                    "{{workspaceId}}",
-                    "repositories",
-                    "{{repositoryId}}",
-                    "data-sources",
-                    "{{dataSourceId}}",
-                    "test-connection"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"type\": \"postgres\",\n  \"message\": \"Connection test successful\",\n  \"responseTime\": 156,\n  \"serverInfo\": {\n    \"version\": \"PostgreSQL 16.1 on x86_64-pc-linux-gnu\",\n    \"serverName\": \"PostgreSQL\"\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
-          "name": "Execute Query",
+          "name": "Execute Query on Repository",
           "request": {
             "method": "POST",
             "header": [
@@ -1631,60 +1689,22 @@
               "raw": "{\n  \"query\": \"SELECT * FROM users WHERE id = ?\",\n  \"params\": [1],\n  \"timeout\": 30000\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/execute",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/execute",
               "host": ["{{baseUrl}}"],
               "path": [
                 "workspaces",
                 "{{workspaceId}}",
                 "repositories",
                 "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
                 "execute"
               ]
-            }
+            },
+            "description": "Execute a single query on a repository's database connection using user-specific credentials. The system automatically resolves the appropriate credentials for the current user. Supports parameterized queries and custom timeouts."
           },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"query\": \"SELECT * FROM users LIMIT 5\",\n  \"params\": []\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/execute",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "workspaces",
-                    "{{workspaceId}}",
-                    "repositories",
-                    "{{repositoryId}}",
-                    "data-sources",
-                    "{{dataSourceId}}",
-                    "execute"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\"\n    }\n  ],\n  \"rowCount\": 1,\n  \"executionTime\": 25,\n  \"type\": \"postgres\"\n}"
-            }
-          ],
-          "description": "Execute a single query on a data source. Supports parameterized queries and custom timeouts. The query format depends on the database type (SQL for PostgreSQL/MySQL, MongoDB query objects, etc.)."
+          "response": []
         },
         {
-          "name": "Execute Batch Queries",
+          "name": "Execute Batch Queries on Repository",
           "request": {
             "method": "POST",
             "header": [
@@ -1695,282 +1715,62 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"queries\": [\n    {\n      \"query\": \"SELECT COUNT(*) as user_count FROM users\",\n      \"params\": []\n    },\n    {\n      \"query\": \"SELECT * FROM users WHERE isActive = ?\",\n      \"params\": [true]\n    },\n    {\n      \"query\": \"INSERT INTO audit_logs (action, userId) VALUES (?, ?)\",\n      \"params\": [\"batch_query\", 1]\n    }\n  ],\n  \"timeout\": 60000\n}"
+              "raw": "{\n  \"queries\": [\n    {\n      \"query\": \"SELECT COUNT(*) as user_count FROM users\",\n      \"params\": []\n    },\n    {\n      \"query\": \"SELECT * FROM users WHERE isActive = ?\",\n      \"params\": [true]\n    }\n  ],\n  \"timeout\": 60000\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/batch",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/batch",
               "host": ["{{baseUrl}}"],
               "path": [
                 "workspaces",
                 "{{workspaceId}}",
                 "repositories",
                 "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
                 "batch"
               ]
-            }
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"queries\": [\n    {\n      \"query\": \"SELECT COUNT(*) as user_count FROM users\",\n      \"params\": []\n    },\n    {\n      \"query\": \"SELECT * FROM users WHERE isActive = ?\",\n      \"params\": [true]\n    }\n  ]\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/batch",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "workspaces",
-                    "{{workspaceId}}",
-                    "repositories",
-                    "{{repositoryId}}",
-                    "data-sources",
-                    "{{dataSourceId}}",
-                    "batch"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"results\": [\n    {\n      \"success\": true,\n      \"data\": [{\"user_count\": 150}],\n      \"rowCount\": 1\n    },\n    {\n      \"success\": true,\n      \"data\": [{\"id\": 1, \"email\": \"user@example.com\"}],\n      \"rowCount\": 1\n    }\n  ],\n  \"totalExecutionTime\": 45,\n  \"type\": \"postgres\",\n  \"queryCount\": 2\n}"
-            }
-          ],
-          "description": "Execute multiple queries in batch on a data source. Useful for running related queries together with better performance than individual requests."
-        },
-        {
-          "name": "Execute Transaction (Reserved)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"operations\": [\n    {\n      \"type\": \"query\",\n      \"query\": \"INSERT INTO users (email, firstName) VALUES (?, ?)\",\n      \"params\": [\"newuser@example.com\", \"New\"]\n    },\n    {\n      \"type\": \"query\",\n      \"query\": \"UPDATE user_stats SET total_users = total_users + 1\",\n      \"params\": []\n    }\n  ]\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/transaction",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
-                "transaction"
-              ]
-            }
+            "description": "Execute multiple queries in batch on a repository's database connection using user-specific credentials. The system automatically resolves the appropriate credentials for the current user."
           },
-          "description": "Execute operations within a database transaction. Currently returns an error indicating the endpoint is reserved for future implementation. Requires specific transaction operation implementation."
+          "response": []
         },
         {
-          "name": "Get Connection Status",
+          "name": "Get Repository Connection Status",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/status",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/status",
               "host": ["{{baseUrl}}"],
               "path": [
                 "workspaces",
                 "{{workspaceId}}",
                 "repositories",
                 "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
                 "status"
               ]
-            }
+            },
+            "description": "Get connection status for a repository's database connection using the current user's resolved credentials."
           },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/status",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "workspaces",
-                    "{{workspaceId}}",
-                    "repositories",
-                    "{{repositoryId}}",
-                    "data-sources",
-                    "{{dataSourceId}}",
-                    "status"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"workspaceId\": \"uuid\",\n  \"repositoryId\": \"uuid\",\n  \"dataSourceId\": \"uuid\",\n  \"type\": \"postgres\",\n  \"status\": \"healthy\",\n  \"connectedAt\": \"2024-01-01T12:00:00Z\",\n  \"responseTime\": 15\n}"
-            }
-          ],
-          "description": "Get connection status for a specific data source. Returns health status, connection details, and response time metrics."
+          "response": []
         },
         {
-          "name": "Get Repository Data Sources",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "workspaces",
-                    "{{workspaceId}}",
-                    "repositories",
-                    "{{repositoryId}}",
-                    "data-sources"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"workspaceId\": \"uuid\",\n  \"repositoryId\": \"uuid\",\n  \"dataSources\": [\n    {\n      \"dataSourceId\": \"uuid\",\n      \"name\": \"Development Database\",\n      \"type\": \"postgres\",\n      \"status\": \"healthy\",\n      \"connectedAt\": \"2024-01-01T12:00:00Z\"\n    },\n    {\n      \"dataSourceId\": \"uuid\",\n      \"name\": \"Staging Database\",\n      \"type\": \"postgres\",\n      \"status\": \"healthy\",\n      \"connectedAt\": \"2024-01-01T12:05:00Z\"\n    }\n  ]\n}"
-            }
-          ],
-          "description": "Get all data sources for a repository with their connection status. Shows overview of all data sources and their health status."
-        },
-        {
-          "name": "Disconnect Data Source",
+          "name": "Disconnect Repository Connection",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/connection",
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection",
               "host": ["{{baseUrl}}"],
               "path": [
                 "workspaces",
                 "{{workspaceId}}",
                 "repositories",
                 "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
                 "connection"
               ]
-            }
+            },
+            "description": "Disconnect and clean up the repository's database connection from the connection pool for the current user's resolved credentials."
           },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "DELETE",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/connection",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "workspaces",
-                    "{{workspaceId}}",
-                    "repositories",
-                    "{{repositoryId}}",
-                    "data-sources",
-                    "{{dataSourceId}}",
-                    "connection"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"message\": \"Data source connection disconnected successfully\"\n}"
-            }
-          ],
-          "description": "Disconnect a specific data source connection. Useful for manually managing connection pools or closing connections."
-        },
-        {
-          "name": "Get Native Client Info (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/native-client",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "workspaces",
-                "{{workspaceId}}",
-                "repositories",
-                "{{repositoryId}}",
-                "data-sources",
-                "{{dataSourceId}}",
-                "native-client"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/data-sources/{{dataSourceId}}/native-client",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "workspaces",
-                    "{{workspaceId}}",
-                    "repositories",
-                    "{{repositoryId}}",
-                    "data-sources",
-                    "{{dataSourceId}}",
-                    "native-client"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"type\": \"postgres\",\n  \"warning\": \"Direct client access bypasses connection pool management. Use with extreme caution.\",\n  \"hasClient\": true\n}"
-            }
-          ],
-          "description": "Get native database client information (admin endpoint). Returns client type and availability but not the actual client object for security reasons. Requires manage permissions on the repository."
+          "response": []
         }
       ]
     },

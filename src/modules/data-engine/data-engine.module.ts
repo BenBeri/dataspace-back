@@ -19,7 +19,7 @@ import {
  */
 @Module({
   imports: [
-    // Import platform module to access DataSourceService, RepositoryService, etc.
+    // Import platform module to access RepositoryService, RepositoryFacade, etc.
     PlatformModule,
   ],
   controllers: [

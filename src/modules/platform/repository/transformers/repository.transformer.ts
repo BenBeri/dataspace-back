@@ -3,7 +3,6 @@ import { RepositoryResponseDto } from '../dto/repository-response.dto';
 import { CreateRepositoryRequestDto } from '../dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from '../dto/update-repository-request.dto';
 import { WorkspaceTransformer } from '../../workspace/transformers/workspace.transformer';
-import { DataSourceTransformer } from './data-source.transformer';
 import { EntityKeyNameHelper } from '../../shared/helpers/entity-key-name.helper';
 
 export class RepositoryTransformer {
@@ -17,20 +16,23 @@ export class RepositoryTransformer {
     responseDto.workspaceId = repository.workspaceId;
     responseDto.createdAt = repository.createdAt;
     responseDto.updatedAt = repository.updatedAt;
-    
+
     if (repository.workspace) {
-      responseDto.workspace = WorkspaceTransformer.toResponseDto(repository.workspace);
+      responseDto.workspace = WorkspaceTransformer.toResponseDto(
+        repository.workspace,
+      );
     }
-    
-    if (repository.dataSources && repository.dataSources.length > 0) {
-      responseDto.dataSources = DataSourceTransformer.toResponseDtoArray(repository.dataSources);
-    }
-    
+
+    // Add connection information based on credentials availability
+    responseDto.hasConnection = repository.credentials && repository.credentials.length > 0;
+
     return responseDto;
   }
 
-  static toResponseDtoArray(repositories: Repository[]): RepositoryResponseDto[] {
-    return repositories.map(repository => this.toResponseDto(repository));
+  static toResponseDtoArray(
+    repositories: Repository[],
+  ): RepositoryResponseDto[] {
+    return repositories.map((repository) => this.toResponseDto(repository));
   }
 
   static createRequestDtoToEntity(
@@ -56,21 +58,21 @@ export class RepositoryTransformer {
     dto: UpdateRepositoryRequestDto,
   ): Partial<Repository> {
     const updates: Partial<Repository> = {};
-    
+
     if (dto.name !== undefined) {
       updates.name = dto.name;
     }
-    
+
     // Note: nameKey is not updatable - it's set automatically during creation
-    
+
     if (dto.description !== undefined) {
       updates.description = dto.description;
     }
-    
+
     if (dto.type !== undefined) {
       updates.type = dto.type;
     }
-    
+
     return updates;
   }
 }
