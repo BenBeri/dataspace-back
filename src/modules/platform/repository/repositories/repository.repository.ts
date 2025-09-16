@@ -10,7 +10,11 @@ export class RepositoryRepository {
     private readonly repository: TypeOrmRepository<Repository>,
   ) {}
 
-  async create(name: string, description: string, workspaceId: string): Promise<Repository> {
+  async create(
+    name: string,
+    description: string,
+    workspaceId: string,
+  ): Promise<Repository> {
     const repositoryEntity = this.repository.create({
       name,
       description,
@@ -19,7 +23,9 @@ export class RepositoryRepository {
     return await this.repository.save(repositoryEntity);
   }
 
-  async createFromData(repositoryData: Partial<Repository>): Promise<Repository> {
+  async createFromData(
+    repositoryData: Partial<Repository>,
+  ): Promise<Repository> {
     const repositoryEntity = this.repository.create(repositoryData);
     return await this.repository.save(repositoryEntity);
   }
@@ -27,7 +33,7 @@ export class RepositoryRepository {
   async findById(id: string): Promise<Repository | null> {
     return await this.repository.findOne({
       where: { id },
-      relations: ['workspace', 'dataSources'],
+      relations: ['workspace', 'connectionHistory'],
     });
   }
 
@@ -57,34 +63,37 @@ export class RepositoryRepository {
     skip: number = 0,
     take: number = 10,
   ): Promise<[Repository[], number]> {
-    const queryBuilder = this.repository.createQueryBuilder('repository')
+    const queryBuilder = this.repository
+      .createQueryBuilder('repository')
       .leftJoinAndSelect('repository.workspace', 'workspace')
-      .leftJoinAndSelect('repository.dataSources', 'dataSources');
-    
-    queryBuilder.where('repository.workspaceId = :workspaceId', { workspaceId });
+      .leftJoinAndSelect('repository.connectionHistory', 'connectionHistory');
+
+    queryBuilder.where('repository.workspaceId = :workspaceId', {
+      workspaceId,
+    });
 
     if (search && search.trim() !== '') {
       const searchTerm = `%${search.trim()}%`;
       queryBuilder.andWhere(
         '(repository.name LIKE :search OR repository.description LIKE :search)',
-        { search: searchTerm }
+        { search: searchTerm },
       );
     }
 
-    queryBuilder
-      .orderBy('repository.createdAt', 'DESC')
-      .skip(skip)
-      .take(take);
+    queryBuilder.orderBy('repository.createdAt', 'DESC').skip(skip).take(take);
 
     return await queryBuilder.getManyAndCount();
   }
 
-  async findAllPaginated(skip: number, take: number): Promise<[Repository[], number]> {
+  async findAllPaginated(
+    skip: number,
+    take: number,
+  ): Promise<[Repository[], number]> {
     return await this.repository.findAndCount({
       skip,
       take,
       order: { createdAt: 'DESC' },
-      relations: ['workspace', 'dataSources'],
+      relations: ['workspace', 'connectionHistory'],
     });
   }
 
@@ -97,7 +106,10 @@ export class RepositoryRepository {
     return updated;
   }
 
-  async updateWithData(id: string, updateData: Partial<Repository>): Promise<void> {
+  async updateWithData(
+    id: string,
+    updateData: Partial<Repository>,
+  ): Promise<void> {
     await this.repository.update(id, updateData);
   }
 
@@ -105,17 +117,23 @@ export class RepositoryRepository {
     await this.repository.delete(id);
   }
 
-  async existsByIdAndWorkspaceId(id: string, workspaceId: string): Promise<boolean> {
+  async existsByIdAndWorkspaceId(
+    id: string,
+    workspaceId: string,
+  ): Promise<boolean> {
     const count = await this.repository.count({
       where: { id, workspaceId },
     });
     return count > 0;
   }
 
-  async findByIdAndWorkspaceId(id: string, workspaceId: string): Promise<Repository | null> {
+  async findByIdAndWorkspaceId(
+    id: string,
+    workspaceId: string,
+  ): Promise<Repository | null> {
     return await this.repository.findOne({
       where: { id, workspaceId },
-      relations: ['workspace', 'dataSources'],
+      relations: ['workspace', 'connectionHistory'],
     });
   }
 
