@@ -113,6 +113,30 @@ export class RepositoryService {
     );
   }
 
+  async getRepositoriesByWorkspaceId(
+    workspaceId: string,
+    skip: number = 0,
+    take: number = 10,
+    search?: string,
+  ): Promise<[Repository[], number]> {
+    return await this.repositoryRepository.findByWorkspaceIdWithSearch(
+      workspaceId,
+      search,
+      skip,
+      take,
+    );
+  }
+
+  async existsByIdAndWorkspaceId(
+    repositoryId: string,
+    workspaceId: string,
+  ): Promise<boolean> {
+    return await this.repositoryRepository.existsByIdAndWorkspaceId(
+      repositoryId,
+      workspaceId,
+    );
+  }
+
   /**
    * Checks if the error is a unique constraint violation for a specific column
    */
@@ -157,14 +181,4 @@ export class RepositoryService {
   }
 
   // Basic repository operations with connection fields
-
-  async updateRepositoryConnectionFields(
-    repositoryId: string,
-    updates: Partial<
-      Pick<Repository, 'connectionName' | 'encryptedConnectionConfiguration'>
-    >,
-  ): Promise<Repository> {
-    await this.repositoryRepository.updateWithData(repositoryId, updates);
-    return await this.getRepositoryById(repositoryId);
-  }
 }
