@@ -43,4 +43,22 @@ export class RepositoryConnectionHistoryService {
   async deleteByRepositoryId(repositoryId: string): Promise<void> {
     await this.connectionHistoryRepository.deleteByRepositoryId(repositoryId);
   }
+
+  async getConnectionHistory(
+    repositoryId: string,
+    skip: number = 0,
+    take: number = 10,
+  ): Promise<[RepositoryConnectionHistory[], number]> {
+    return await this.connectionHistoryRepository.findByRepositoryIdPaginated(
+      repositoryId,
+      skip,
+      take,
+    );
+  }
+
+  async recordConnectionChange(
+    changeData: any,
+  ): Promise<RepositoryConnectionHistory> {
+    return await this.recordChange(changeData);
+  }
 }

@@ -82,7 +82,6 @@ export class RepositoryProvider {
     return { message: 'Repository successfully deleted' };
   }
 
-
   // Connection History operations (replacing data source change history)
   async getConnectionHistory(
     repositoryId: string,
@@ -94,7 +93,7 @@ export class RepositoryProvider {
     const limit = query.limit || 10;
 
     const [connectionHistory, total] =
-      await this.repositoryFacade.getConnectionHistoryPaginated(
+      await this.repositoryFacade.getConnectionHistory(
         repositoryId,
         offset,
         limit,

@@ -93,10 +93,15 @@ export class RepositoryFacade {
     repositoryId: string,
     workspaceId: string,
   ): Promise<Repository> {
-    return await this.repositoryService.getRepositoryByIdAndWorkspaceId(
-      repositoryId,
-      workspaceId,
-    );
+    const repository =
+      await this.repositoryService.getRepositoryByIdAndWorkspaceId(
+        repositoryId,
+        workspaceId,
+      );
+    if (!repository) {
+      throw new NotFoundException(`Repository not found in workspace`);
+    }
+    return repository;
   }
 
   // Connection History Management
@@ -121,13 +126,19 @@ export class RepositoryFacade {
     isDefault: boolean,
     userId: string,
   ): Promise<RepositoryCredentials> {
-    const repository = await this.repositoryService.getRepositoryById(repositoryId);
-    
+    const repository =
+      await this.repositoryService.getRepositoryById(repositoryId);
+
     // Encrypt the configuration
-    const workspace = await this.workspaceService.getWorkspaceById(repository.workspaceId);
+    const workspace = await this.workspaceService.getWorkspaceById(
+      repository.workspaceId,
+    );
     const kmsKeyId = workspace.kmsKeyId;
     const configurationJson = JSON.stringify(configuration);
-    const encryptedConfiguration = await this.keyManagementService.encrypt(kmsKeyId, configurationJson);
+    const encryptedConfiguration = await this.keyManagementService.encrypt(
+      kmsKeyId,
+      configurationJson,
+    );
 
     return await this.repositoryCredentialsService.createCredentials(
       repositoryId,
@@ -148,23 +159,30 @@ export class RepositoryFacade {
     },
     userId: string,
   ): Promise<RepositoryCredentials> {
-    const credentials = await this.repositoryCredentialsService.getCredentialsById(credentialsId);
-    
+    const credentials =
+      await this.repositoryCredentialsService.getCredentialsById(credentialsId);
+
     let encryptedConfiguration: string | undefined;
     if (updates.configuration) {
-      const workspace = await this.workspaceService.getWorkspaceById(credentials.repository.workspaceId);
+      const workspace = await this.workspaceService.getWorkspaceById(
+        credentials.repository.workspaceId,
+      );
       const kmsKeyId = workspace.kmsKeyId;
       const configurationJson = JSON.stringify(updates.configuration);
-      encryptedConfiguration = await this.keyManagementService.encrypt(kmsKeyId, configurationJson);
+      encryptedConfiguration = await this.keyManagementService.encrypt(
+        kmsKeyId,
+        configurationJson,
+      );
     }
 
     return await this.repositoryCredentialsService.updateCredentials(
       credentialsId,
       {
         ...updates,
-        ...(encryptedConfiguration && { encryptedCredentials: encryptedConfiguration }),
+        ...(encryptedConfiguration && {
+          encryptedCredentials: encryptedConfiguration,
+        }),
       },
-      userId,
     );
   }
 
@@ -185,17 +203,24 @@ export class RepositoryFacade {
   async getRepositoryCredentials(
     repositoryId: string,
   ): Promise<RepositoryCredentials[]> {
-    return await this.repositoryCredentialsService.getCredentialsByRepositoryId(repositoryId);
+    return await this.repositoryCredentialsService.getCredentialsByRepositoryId(
+      repositoryId,
+    );
   }
 
-  async getCredentialsById(credentialsId: string): Promise<RepositoryCredentials> {
-    return await this.repositoryCredentialsService.getCredentialsById(credentialsId);
+  async getCredentialsById(
+    credentialsId: string,
+  ): Promise<RepositoryCredentials> {
+    return await this.repositoryCredentialsService.getCredentialsById(
+      credentialsId,
+    );
   }
 
   async decryptCredentialsConfiguration(
     encryptedCredentials: string,
   ): Promise<Record<string, any>> {
-    const decryptedJson = await this.keyManagementService.decrypt(encryptedCredentials);
+    const decryptedJson =
+      await this.keyManagementService.decrypt(encryptedCredentials);
     return JSON.parse(decryptedJson);
   }
 
@@ -243,7 +268,9 @@ export class RepositoryFacade {
   async getCredentialsAccessList(
     credentialsId: string,
   ): Promise<CredentialsAccess[]> {
-    return await this.credentialsAccessService.getAccessByCredentials(credentialsId);
+    return await this.credentialsAccessService.getAccessByCredentials(
+      credentialsId,
+    );
   }
 
   async revokeUserAccessToCredentials(
@@ -257,7 +284,10 @@ export class RepositoryFacade {
     credentialsId: string,
     groupId: string,
   ): Promise<void> {
-    await this.credentialsAccessService.revokeGroupAccess(credentialsId, groupId);
+    await this.credentialsAccessService.revokeGroupAccess(
+      credentialsId,
+      groupId,
+    );
   }
 
   async getAvailableCredentialsForUser(

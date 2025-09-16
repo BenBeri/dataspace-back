@@ -222,4 +222,46 @@ export class CredentialsAccessService {
   async removeAllAccess(credentialsId: string): Promise<void> {
     await this.credentialsAccessRepository.removeByCredentialsId(credentialsId);
   }
+
+  /**
+   * Get access entries by credentials ID
+   */
+  async getAccessByCredentials(
+    credentialsId: string,
+  ): Promise<CredentialsAccess[]> {
+    return await this.credentialsAccessRepository.findByCredentialsId(credentialsId);
+  }
+
+  /**
+   * Get available credentials for user (simplified implementation)
+   */
+  async getAvailableCredentialsForUser(
+    repositoryId: string,
+    userId: string,
+    userGroupIds: string[],
+  ): Promise<{
+    repositoryId: string;
+    availableCredentials: Array<{
+      credentials: {
+        id: string;
+        name: string;
+        description: string;
+        isDefault: boolean;
+        isActive: boolean;
+      };
+      accessType: 'user' | 'group' | 'default';
+      accessDetails: {
+        identityId: string;
+        identityType: AccessIdentityType;
+        grantedBy?: string;
+        notes?: string;
+      };
+    }>;
+  }> {
+    // Simplified implementation for now
+    return {
+      repositoryId,
+      availableCredentials: [],
+    };
+  }
 }

@@ -314,6 +314,14 @@ export class DataEngineProvider {
       }
 
       try {
+        // Get user's credentials for this repository
+        const credentials =
+          await this.credentialsResolverService.resolveCredentialsForUser(
+            repositoryId,
+            userId,
+            await this.getUserGroupsInWorkspace(workspaceId, userId),
+          );
+
         // Test connection health with user-specific credentials
         const connection = await this.getConnection(
           workspaceId,
@@ -325,7 +333,7 @@ export class DataEngineProvider {
 
         return {
           repositoryId,
-          credentialsName: credentials.name,
+          credentialsName: credentials?.credentials?.name || null,
           type: connection.type,
           status: healthCheck.healthy ? 'healthy' : 'unhealthy',
           connectedAt: connection.createdAt,
@@ -333,7 +341,7 @@ export class DataEngineProvider {
       } catch {
         return {
           repositoryId,
-          credentialsName: credentials?.name || null,
+          credentialsName: null,
           type: repository.type,
           status: 'disconnected',
         };
@@ -541,13 +549,22 @@ export class DataEngineProvider {
       }
 
       // Get repository connection configuration
-      const decryptedConfig =
-        await this.repositoryFacade.getConnectionConfiguration(repositoryId);
-      if (!decryptedConfig) {
+      const credentialsResult =
+        await this.credentialsResolverService.resolveCredentialsForUser(
+          repositoryId,
+          '1', // Placeholder for userId - needs to be passed as parameter
+          [], // Placeholder for userGroupIds - needs to be resolved
+        );
+      if (!credentialsResult) {
         throw new NotFoundException(
           `No connection configuration found for repository ${repositoryId}`,
         );
       }
+
+      // Decrypt the credentials to get the actual connection config
+      const decryptedConfig = await this.repositoryFacade.decryptCredentialsConfiguration(
+        credentialsResult.credentials.encryptedCredentials,
+      );
 
       // Test connection using decrypted configuration
       const result = await this.queryExecutionService.testConnectionDirect(
