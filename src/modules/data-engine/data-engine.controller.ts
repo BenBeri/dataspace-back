@@ -24,7 +24,7 @@ import {
 } from './dto/query-result-response.dto';
 import {
   ConnectionStatusResponseDto,
-  RepositoryDataSourcesResponseDto,
+  RepositoryConnectionInfoResponseDto,
   PoolStatisticsResponseDto,
 } from './dto/connection-status-response.dto';
 import {
@@ -119,10 +119,10 @@ export class ConnectionTestController {
 
 /**
  * Data Engine Controller
- * Provides REST API endpoints for multi-database query execution
+ * Provides REST API endpoints for multi-database query execution on repositories
  * Follows project convention: Controller → Provider → Service → Repository
  */
-@Controller('workspaces/:workspaceId/repositories/:repositoryId/data-sources')
+@Controller('workspaces/:workspaceId/repositories/:repositoryId')
 @UseGuards(WorkspaceGuard, RepositoryGuard)
 export class DataEngineController {
   private readonly logger = new Logger(DataEngineController.name);
@@ -130,22 +130,21 @@ export class DataEngineController {
   constructor(private readonly dataEngineProvider: DataEngineProvider) {}
 
   /**
-   * Execute a single query on a data source
+   * Execute a single query on a repository's database connection
    */
-  @Post(':dataSourceId/execute')
+  @Post('execute')
   @HttpCode(HttpStatus.OK)
   @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
   async executeQuery(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
-    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @Body() queryRequest: ExecuteQueryRequestDto,
-    @CurrentUser() _user: UserSession,
+    @CurrentUser() user: UserSession,
   ): Promise<QueryResultResponseDto> {
     const result = await this.dataEngineProvider.executeQuery(
       workspaceId,
       repositoryId,
-      dataSourceId,
+      user.userId,
       queryRequest.query,
       queryRequest.params,
     );
@@ -160,22 +159,21 @@ export class DataEngineController {
   }
 
   /**
-   * Execute multiple queries in batch on a data source
+   * Execute multiple queries in batch on a repository's database connection
    */
-  @Post(':dataSourceId/batch')
+  @Post('batch')
   @HttpCode(HttpStatus.OK)
   @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
   async executeBatchQueries(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
-    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @Body() batchRequest: ExecuteBatchQueriesRequestDto,
-    @CurrentUser() _user: UserSession,
+    @CurrentUser() user: UserSession,
   ): Promise<BatchQueryResultResponseDto> {
     const result = await this.dataEngineProvider.executeBatchQueries(
       workspaceId,
       repositoryId,
-      dataSourceId,
+      user.userId,
       batchRequest.queries,
     );
 
@@ -192,13 +190,12 @@ export class DataEngineController {
    * Execute operations within a database transaction
    * Note: This endpoint requires specific transaction operation implementation
    */
-  @Post(':dataSourceId/transaction')
+  @Post('transaction')
   @HttpCode(HttpStatus.OK)
   @CheckAbility({ action: RepositoryPermission.UPDATE, subject: 'Repository' })
   executeTransaction(
     @Param('workspaceId', ParseUUIDPipe) _workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) _repositoryId: string,
-    @Param('dataSourceId', ParseUUIDPipe) _dataSourceId: string,
     @Body() _transactionRequest: { operations: any[] },
     @CurrentUser() _user: UserSession,
   ): Promise<TransactionResultResponseDto> {
@@ -210,28 +207,28 @@ export class DataEngineController {
   }
 
   /**
-   * Test database connection using existing DataSource entity
-   * Retrieves and decrypts credentials from DataSource, then tests connection
+   * Test database connection using existing Repository connection configuration
+   * Retrieves and decrypts credentials from Repository, then tests connection
    * Requires repository read permissions
    */
-  @Post(':dataSourceId/test-connection')
+  @Post('test-connection')
   @HttpCode(HttpStatus.OK)
   @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
-  async testDataSourceConnection(
+  async testRepositoryConnection(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
-    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @Body() testRequest: { timeoutMs?: number },
-    @CurrentUser() _user: UserSession,
+    @CurrentUser() user: UserSession,
   ): Promise<TestConnectionResponseDto> {
     this.logger.debug(
-      `Testing DataSource connection for dataSource:${dataSourceId}`,
+      `Testing Repository connection for repository:${repositoryId}`,
     );
 
-    const result = await this.dataEngineProvider.testConnectionFromDataSource(
+    // TODO: This method needs to be updated to use user-specific credentials
+    // For now, keeping the old method until testConnectionFromRepository is updated
+    const result = await this.dataEngineProvider.testConnectionFromRepository(
       workspaceId,
       repositoryId,
-      dataSourceId,
       testRequest.timeoutMs,
     );
 
@@ -246,63 +243,69 @@ export class DataEngineController {
   }
 
   /**
-   * Get connection status for a specific data source
+   * Get connection status for a repository
    */
-  @Get(':dataSourceId/status')
+  @Get('status')
   @HttpCode(HttpStatus.OK)
   @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
   async getConnectionStatus(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
-    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
-    @CurrentUser() _user: UserSession,
+    @CurrentUser() user: UserSession,
   ): Promise<ConnectionStatusResponseDto> {
     return await this.dataEngineProvider.getConnectionStatus(
       workspaceId,
       repositoryId,
-      dataSourceId,
+      user.userId,
     );
   }
 
   /**
-   * Get all data sources for a repository with their connection status
+   * Get repository connection information
    */
-  @Get('')
+  @Get('connection-info')
   @HttpCode(HttpStatus.OK)
   @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
-  async getRepositoryDataSources(
+  async getRepositoryConnectionInfo(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
-    @CurrentUser() _user: UserSession,
-  ): Promise<RepositoryDataSourcesResponseDto> {
-    const dataSources = await this.dataEngineProvider.getRepositoryDataSources(
+    @CurrentUser() user: UserSession,
+  ): Promise<{
+    repositoryId: string;
+    credentialsName: string | null;
+    type: string;
+    status: string;
+    connectedAt?: Date;
+  }> {
+    const result = await this.dataEngineProvider.getRepositoryConnectionInfo(
       workspaceId,
       repositoryId,
+      user.userId,
     );
 
     return {
-      workspaceId,
-      repositoryId,
-      dataSources,
+      repositoryId: result.repositoryId,
+      credentialsName: result.credentialsName,
+      type: result.type,
+      status: result.status,
+      connectedAt: result.connectedAt,
     };
   }
 
   /**
-   * Disconnect a specific data source connection
+   * Disconnect repository connection
    */
-  @Delete(':dataSourceId/connection')
+  @Delete('connection')
   @HttpCode(HttpStatus.OK)
   @CheckAbility({ action: RepositoryPermission.UPDATE, subject: 'Repository' })
-  async disconnectDataSource(
+  async disconnectRepository(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
-    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @CurrentUser() _user: UserSession,
   ): Promise<{ success: boolean; message: string }> {
-    return await this.dataEngineProvider.disconnectDataSource(
+    return await this.dataEngineProvider.disconnectRepository(
       workspaceId,
       repositoryId,
-      dataSourceId,
     );
   }
 
@@ -310,14 +313,13 @@ export class DataEngineController {
    * Get native database client (admin endpoint)
    * Use with extreme caution - bypasses connection pool management
    */
-  @Get(':dataSourceId/native-client')
+  @Get('native-client')
   @HttpCode(HttpStatus.OK)
   @CheckAbility({ action: RepositoryPermission.MANAGE, subject: 'Repository' }) // Requires admin access
   async getNativeClient(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
-    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
-    @CurrentUser() _user: UserSession,
+    @CurrentUser() user: UserSession,
   ): Promise<{
     type: string;
     warning: string;
@@ -326,7 +328,7 @@ export class DataEngineController {
     const result = await this.dataEngineProvider.getNativeClient(
       workspaceId,
       repositoryId,
-      dataSourceId,
+      user.userId,
     );
 
     // Don't expose the actual client object for security reasons
