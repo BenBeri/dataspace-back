@@ -10,10 +10,9 @@ import {
   Unique,
 } from 'typeorm';
 import { Workspace } from '../workspace/workspace.entity';
+import { DataSource } from './data-source.entity';
 import { DataSourceType } from '../enums/data-source-type.enum';
 import { KeyNameEntity } from '../base/key-name.entity';
-import { RepositoryConnectionHistory } from './repository-connection-history.entity';
-import { RepositoryCredentials } from './repository-credentials.entity';
 
 @Entity('repositories')
 @Unique(['workspaceId', 'nameKey'])
@@ -43,17 +42,8 @@ export class Repository extends KeyNameEntity {
   @JoinColumn({ name: 'workspaceId' })
   workspace: Workspace;
 
-  @OneToMany(
-    () => RepositoryConnectionHistory,
-    (connectionHistory) => connectionHistory.repository,
-  )
-  connectionHistory: RepositoryConnectionHistory[];
-
-  @OneToMany(
-    () => RepositoryCredentials,
-    (credentials) => credentials.repository,
-  )
-  credentials: RepositoryCredentials[];
+  @OneToMany(() => DataSource, (dataSource) => dataSource.repository)
+  dataSources: DataSource[];
 
   @CreateDateColumn()
   createdAt: Date;

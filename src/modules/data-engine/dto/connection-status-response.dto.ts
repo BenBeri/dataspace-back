@@ -6,6 +6,7 @@ import { DataSourceType } from '../../platform/entities/enums/data-source-type.e
 export class ConnectionStatusResponseDto {
   workspaceId: string;
   repositoryId: string;
+  dataSourceId: string;
   type: DataSourceType | null;
   status: 'healthy' | 'unhealthy' | 'disconnected';
   connectedAt?: Date;
@@ -14,15 +15,18 @@ export class ConnectionStatusResponseDto {
 }
 
 /**
- * DTO for repository connection information response
+ * DTO for repository data sources response
  */
-export class RepositoryConnectionInfoResponseDto {
+export class RepositoryDataSourcesResponseDto {
   workspaceId: string;
   repositoryId: string;
-  credentialsName: string | null;
-  type: DataSourceType;
-  status: 'healthy' | 'unhealthy' | 'disconnected' | 'no-connection';
-  connectedAt?: Date;
+  dataSources: Array<{
+    dataSourceId: string;
+    name: string;
+    type: DataSourceType;
+    status: 'healthy' | 'unhealthy' | 'disconnected';
+    connectedAt?: Date;
+  }>;
 }
 
 /**

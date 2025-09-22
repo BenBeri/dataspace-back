@@ -6,7 +6,7 @@ import {
 } from '../dto/query-result-response.dto';
 import {
   ConnectionStatusResponseDto,
-  RepositoryConnectionInfoResponseDto,
+  RepositoryDataSourcesResponseDto,
   PoolStatisticsResponseDto,
 } from '../dto/connection-status-response.dto';
 
@@ -89,6 +89,7 @@ export class QueryResultTransformer {
   static toConnectionStatusResponse(
     workspaceId: string,
     repositoryId: string,
+    dataSourceId: string,
     type: DataSourceType | null,
     status: 'healthy' | 'unhealthy' | 'disconnected',
     connectedAt?: Date,
@@ -98,6 +99,7 @@ export class QueryResultTransformer {
     return {
       workspaceId,
       repositoryId,
+      dataSourceId,
       type,
       status,
       connectedAt,
@@ -107,23 +109,23 @@ export class QueryResultTransformer {
   }
 
   /**
-   * Transform repository connection info to response DTO
+   * Transform repository data sources to response DTO
    */
-  static toRepositoryConnectionInfoResponse(
+  static toRepositoryDataSourcesResponse(
     workspaceId: string,
     repositoryId: string,
-    credentialsName: string | null,
-    type: DataSourceType,
-    status: 'healthy' | 'unhealthy' | 'disconnected' | 'no-connection',
-    connectedAt?: Date,
-  ): RepositoryConnectionInfoResponseDto {
+    dataSources: Array<{
+      dataSourceId: string;
+      name: string;
+      type: DataSourceType;
+      status: 'healthy' | 'unhealthy' | 'disconnected';
+      connectedAt?: Date;
+    }>,
+  ): RepositoryDataSourcesResponseDto {
     return {
       workspaceId,
       repositoryId,
-      credentialsName,
-      type,
-      status,
-      connectedAt,
+      dataSources,
     };
   }
 

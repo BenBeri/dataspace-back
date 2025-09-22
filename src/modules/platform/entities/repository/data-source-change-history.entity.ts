@@ -6,26 +6,26 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Repository } from './repository.entity';
+import { DataSource } from './data-source.entity';
 import { User } from '../user/user.entity';
 import { DataSourceType } from '../enums/data-source-type.enum';
 
-@Entity('repository_connection_history')
-export class RepositoryConnectionHistory {
+@Entity('data_source_change_history')
+export class DataSourceChangeHistory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  repositoryId: string;
+  dataSourceId: string;
 
   @Column()
   userId: string;
 
-  @Column({ nullable: true, type: 'varchar' })
-  previousConnectionName?: string | null;
+  @Column({ nullable: true })
+  previousName?: string;
 
-  @Column({ nullable: true, type: 'varchar' })
-  newConnectionName?: string | null;
+  @Column({ nullable: true })
+  newName?: string;
 
   @Column({
     type: 'enum',
@@ -47,9 +47,9 @@ export class RepositoryConnectionHistory {
   @Column()
   changeDescription: string;
 
-  @ManyToOne(() => Repository, (repository) => repository.connectionHistory)
-  @JoinColumn({ name: 'repositoryId' })
-  repository: Repository;
+  @ManyToOne(() => DataSource, (dataSource) => dataSource.changeHistory)
+  @JoinColumn({ name: 'dataSourceId' })
+  dataSource: DataSource;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })

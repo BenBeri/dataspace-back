@@ -15,7 +15,12 @@ import {
 import { RepositoryProvider } from './providers/repository.provider';
 import { CreateRepositoryRequestDto } from './dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from './dto/update-repository-request.dto';
+import { UpdateDataSourceRequestDto } from './dto/update-data-source-request.dto';
+import { CreateDataSourceRequestDto } from './dto/create-data-source-request.dto';
 import { RepositoryResponseDto } from './dto/repository-response.dto';
+import { DataSourceResponseDto } from './dto/data-source-response.dto';
+import { DataSourceChangeHistoryResponseDto } from './dto/data-source-change-history-response.dto';
+import { DataSourceConfigurationResponseDto } from './dto/data-source-configuration-response.dto';
 import { PaginatedResponseDto } from '../../../core/dto/paginated-response.dto';
 import { GetWorkspaceRepositoriesQueryDto } from './dto/get-workspace-repositories-query.dto';
 import { PaginationDto } from '../../../core/dto/pagination.dto';
@@ -51,10 +56,7 @@ export class RepositoryController {
 
   @Get()
   @UseGuards(WorkspaceGuard)
-  @CheckAbility({
-    action: WorkspaceManagementPermission.READ,
-    subject: Workspace,
-  })
+  @CheckAbility({ action: WorkspaceManagementPermission.READ, subject: Workspace })
   async getRepositoriesByWorkspace(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Query() query: GetWorkspaceRepositoriesQueryDto,
@@ -75,10 +77,7 @@ export class RepositoryController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() userSession: UserSession,
   ): Promise<RepositoryResponseDto> {
-    return await this.repositoryProvider.getRepositoryById(
-      id,
-      userSession.userId,
-    );
+    return await this.repositoryProvider.getRepositoryById(id, userSession.userId);
   }
 
   @Patch(':id')
@@ -106,24 +105,124 @@ export class RepositoryController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() userSession: UserSession,
   ): Promise<{ message: string }> {
-    return await this.repositoryProvider.deleteRepository(
-      id,
+    return await this.repositoryProvider.deleteRepository(id, userSession.userId);
+  }
+
+  // Data Source endpoints
+
+  @Post(':repositoryId/data-sources')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RepositoryGuard)
+  @CheckAbility({ action: RepositoryPermission.CREATE, subject: Repository })
+  async createDataSource(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Body() createDataSourceDto: CreateDataSourceRequestDto,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<DataSourceResponseDto> {
+    return await this.repositoryProvider.createDataSource(
+      workspaceId,
+      repositoryId,
+      createDataSourceDto,
       userSession.userId,
     );
   }
 
-
-  @Get(':repositoryId/connection/history')
+  @Get(':repositoryId/data-sources')
   @UseGuards(RepositoryGuard)
   @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
-  async getConnectionHistory(
+  async getDataSourcesByRepositoryId(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<DataSourceResponseDto[]> {
+    return await this.repositoryProvider.getDataSourcesByRepositoryId(
+      repositoryId,
+      userSession.userId,
+    );
+  }
+
+  @Get(':repositoryId/data-sources/:dataSourceId')
+  @UseGuards(RepositoryGuard)
+  @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
+  async getDataSourceById(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<DataSourceResponseDto> {
+    return await this.repositoryProvider.getDataSourceById(
+      repositoryId,
+      dataSourceId,
+      userSession.userId,
+    );
+  }
+
+  @Get(':repositoryId/data-sources/:dataSourceId/configuration')
+  @UseGuards(RepositoryGuard)
+  @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
+  async getDataSourceConfiguration(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<DataSourceConfigurationResponseDto> {
+    return await this.repositoryProvider.getDataSourceConfiguration(
+      repositoryId,
+      dataSourceId,
+      userSession.userId,
+    );
+  }
+
+  @Patch(':repositoryId/data-sources/:dataSourceId')
+  @UseGuards(RepositoryGuard)
+  @CheckAbility({ action: RepositoryPermission.UPDATE, subject: Repository })
+  async updateDataSource(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
+    @Body() updateDataSourceDto: UpdateDataSourceRequestDto,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<DataSourceResponseDto> {
+    return await this.repositoryProvider.updateDataSource(
+      workspaceId,
+      repositoryId,
+      dataSourceId,
+      updateDataSourceDto,
+      userSession.userId,
+    );
+  }
+
+  @Delete(':repositoryId/data-sources/:dataSourceId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RepositoryGuard)
+  @CheckAbility({ action: RepositoryPermission.DELETE, subject: Repository })
+  async deleteDataSource(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
+    @CurrentUser() userSession: UserSession,
+  ): Promise<{ message: string }> {
+    return await this.repositoryProvider.deleteDataSource(
+      repositoryId,
+      dataSourceId,
+      userSession.userId,
+    );
+  }
+
+  @Get(':repositoryId/data-sources/:dataSourceId/history')
+  @UseGuards(RepositoryGuard)
+  @CheckAbility({ action: RepositoryPermission.READ, subject: Repository })
+  async getDataSourceChangeHistory(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @Query() query: PaginationDto,
     @CurrentUser() userSession: UserSession,
-  ): Promise<PaginatedResponseDto<any>> {
-    return await this.repositoryProvider.getConnectionHistory(
+  ): Promise<PaginatedResponseDto<DataSourceChangeHistoryResponseDto>> {
+    return await this.repositoryProvider.getDataSourceChangeHistory(
       repositoryId,
+      dataSourceId,
       query,
       userSession.userId,
     );

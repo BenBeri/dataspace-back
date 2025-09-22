@@ -2,9 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { RepositoryService } from '../services/repository.service';
 import { RepositoryFacade } from '../facades/repository.facade';
 import { RepositoryTransformer } from '../transformers/repository.transformer';
+import { DataSourceTransformer } from '../transformers/data-source.transformer';
 import { CreateRepositoryRequestDto } from '../dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from '../dto/update-repository-request.dto';
+import { UpdateDataSourceRequestDto } from '../dto/update-data-source-request.dto';
+import { CreateDataSourceRequestDto } from '../dto/create-data-source-request.dto';
 import { RepositoryResponseDto } from '../dto/repository-response.dto';
+import { DataSourceResponseDto } from '../dto/data-source-response.dto';
+import { DataSourceChangeHistoryResponseDto } from '../dto/data-source-change-history-response.dto';
+import { DataSourceConfigurationResponseDto } from '../dto/data-source-configuration-response.dto';
 import { GetWorkspaceRepositoriesQueryDto } from '../dto/get-workspace-repositories-query.dto';
 import { PaginatedResponseDto } from '../../../../core/dto/paginated-response.dto';
 
@@ -47,17 +53,21 @@ export class RepositoryProvider {
     const limit = query.limit || 10;
     const search = query.search;
 
-    const [repositories, total] =
-      await this.repositoryService.getRepositoriesByWorkspaceWithSearch(
-        workspaceId,
-        search,
-        offset,
-        limit,
-      );
+    const [repositories, total] = await this.repositoryService.getRepositoriesByWorkspaceWithSearch(
+      workspaceId,
+      search,
+      offset,
+      limit,
+    );
 
     const items = RepositoryTransformer.toResponseDtoArray(repositories);
 
-    return new PaginatedResponseDto(items, offset, limit, total);
+    return new PaginatedResponseDto(
+      items,
+      offset,
+      limit,
+      total,
+    );
   }
 
   async updateRepository(
@@ -70,7 +80,7 @@ export class RepositoryProvider {
       updateRepositoryDto,
       userId,
     );
-
+    
     return RepositoryTransformer.toResponseDto(repository);
   }
 
@@ -82,26 +92,113 @@ export class RepositoryProvider {
     return { message: 'Repository successfully deleted' };
   }
 
-  // Connection History operations (replacing data source change history)
-  async getConnectionHistory(
+  // Data source operations
+
+  async createDataSource(
+    workspaceId: string,
     repositoryId: string,
+    createDataSourceDto: CreateDataSourceRequestDto,
+    userId: string,
+  ): Promise<DataSourceResponseDto> {
+    const dataSource = await this.repositoryFacade.createDataSource(
+      workspaceId,
+      repositoryId,
+      createDataSourceDto,
+      userId,
+    );
+
+    return DataSourceTransformer.toResponseDto(dataSource);
+  }
+
+  async getDataSourcesByRepositoryId(
+    repositoryId: string,
+    userId: string,
+  ): Promise<DataSourceResponseDto[]> {
+    const dataSources = await this.repositoryFacade.getDataSourcesByRepositoryId(repositoryId);
+    
+    return DataSourceTransformer.toResponseDtoArray(dataSources);
+  }
+
+  async getDataSourceById(
+    repositoryId: string,
+    dataSourceId: string,
+    userId: string,
+  ): Promise<DataSourceResponseDto> {
+    const dataSource = await this.repositoryFacade.getDataSourceById(repositoryId, dataSourceId);
+    
+    return DataSourceTransformer.toResponseDto(dataSource);
+  }
+
+  async getDataSourceConfiguration(
+    repositoryId: string,
+    dataSourceId: string,
+    userId: string,
+  ): Promise<DataSourceConfigurationResponseDto> {
+    const dataSource = await this.repositoryFacade.getDataSourceById(repositoryId, dataSourceId);
+    const configuration = await this.repositoryFacade.getDataSourceConfiguration(dataSourceId);
+
+    if (!configuration) {
+      throw new NotFoundException('Configuration not found for data source');
+    }
+
+    return DataSourceTransformer.toConfigurationResponseDto(dataSource, configuration);
+  }
+
+  async updateDataSource(
+    workspaceId: string,
+    repositoryId: string,
+    dataSourceId: string,
+    updateDataSourceDto: UpdateDataSourceRequestDto,
+    userId: string,
+  ): Promise<DataSourceResponseDto> {
+    const dataSource = await this.repositoryFacade.updateDataSource(
+      workspaceId,
+      repositoryId,
+      dataSourceId,
+      updateDataSourceDto,
+      userId,
+    );
+
+    return DataSourceTransformer.toResponseDto(dataSource);
+  }
+
+  async deleteDataSource(
+    repositoryId: string,
+    dataSourceId: string,
+    userId: string,
+  ): Promise<{ message: string }> {
+    await this.repositoryFacade.deleteDataSource(
+      repositoryId,
+      dataSourceId,
+      userId,
+    );
+    return { message: 'Data source successfully deleted' };
+  }
+
+  // Change history operations
+  async getDataSourceChangeHistory(
+    repositoryId: string,
+    dataSourceId: string,
     query: { offset?: number; limit?: number },
     userId: string,
-  ): Promise<PaginatedResponseDto<any>> {
-    // TODO: Create proper response DTO
+  ): Promise<PaginatedResponseDto<DataSourceChangeHistoryResponseDto>> {
     const offset = query.offset || 0;
     const limit = query.limit || 10;
 
-    const [connectionHistory, total] =
-      await this.repositoryFacade.getConnectionHistory(
-        repositoryId,
-        offset,
-        limit,
-      );
+    const [changeHistory, total] = await this.repositoryFacade.getDataSourceChangeHistoryPaginated(
+      repositoryId,
+      dataSourceId,
+      offset,
+      limit,
+    );
 
-    // TODO: Transform connection history to proper response DTO
-    const items = connectionHistory; // Temporary - need to create transformer
+    const items = DataSourceTransformer.changeHistoryToResponseDtoArray(changeHistory);
 
-    return new PaginatedResponseDto(items, offset, limit, total);
+    return new PaginatedResponseDto(
+      items,
+      offset,
+      limit,
+      total,
+    );
   }
 }

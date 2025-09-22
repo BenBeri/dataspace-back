@@ -1,20 +1,16 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Repository } from '../entities/repository/repository.entity';
-import { RepositoryConnectionHistory } from '../entities/repository/repository-connection-history.entity';
-import { RepositoryCredentials } from '../entities/repository/repository-credentials.entity';
-import { CredentialsAccess } from '../entities/repository/credentials-access.entity';
+import { DataSource } from '../entities/repository/data-source.entity';
+import { DataSourceChangeHistory } from '../entities/repository/data-source-change-history.entity';
 import { RepositoryController } from './repository.controller';
 import { RepositoryProvider } from './providers/repository.provider';
 import { RepositoryService } from './services/repository.service';
-import { RepositoryConnectionHistoryService } from './services/repository-connection-history.service';
-import { RepositoryCredentialsService } from './services/repository-credentials.service';
-import { CredentialsAccessService } from './services/credentials-access.service';
-import { CredentialsResolverService } from './services/credentials-resolver.service';
+import { DataSourceService } from './services/data-source.service';
+import { DataSourceChangeHistoryService } from './services/data-source-change-history.service';
 import { RepositoryRepository } from './repositories/repository.repository';
-import { RepositoryConnectionHistoryRepository } from './repositories/repository-connection-history.repository';
-import { RepositoryCredentialsRepository } from './repositories/repository-credentials.repository';
-import { CredentialsAccessRepository } from './repositories/credentials-access.repository';
+import { DataSourceRepository } from './repositories/data-source.repository';
+import { DataSourceChangeHistoryRepository } from './repositories/data-source-change-history.repository';
 import { RepositoryFacade } from './facades/repository.facade';
 import { RepositoryGuard } from './guards/repository.guard';
 import { CaslRepositoryGuard } from './guards/casl-repository.guard';
@@ -24,12 +20,7 @@ import { KeyManagementModule } from '../key-management/key-management.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Repository,
-      RepositoryConnectionHistory,
-      RepositoryCredentials,
-      CredentialsAccess,
-    ]),
+    TypeOrmModule.forFeature([Repository, DataSource, DataSourceChangeHistory]),
     forwardRef(() => WorkspaceModule),
     forwardRef(() => AuthModule),
     KeyManagementModule,
@@ -41,16 +32,13 @@ import { KeyManagementModule } from '../key-management/key-management.module';
 
     // Services
     RepositoryService,
-    RepositoryConnectionHistoryService,
-    RepositoryCredentialsService,
-    CredentialsAccessService,
-    CredentialsResolverService,
+    DataSourceService,
+    DataSourceChangeHistoryService,
 
     // Repositories
     RepositoryRepository,
-    RepositoryConnectionHistoryRepository,
-    RepositoryCredentialsRepository,
-    CredentialsAccessRepository,
+    DataSourceRepository,
+    DataSourceChangeHistoryRepository,
 
     // Facades
     RepositoryFacade,
@@ -63,9 +51,8 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     RepositoryService,
     RepositoryRepository,
     RepositoryFacade,
-    RepositoryConnectionHistoryService,
-    RepositoryConnectionHistoryRepository,
-    CredentialsResolverService,
+    DataSourceService,
+    DataSourceRepository,
     RepositoryGuard,
     CaslRepositoryGuard,
   ],

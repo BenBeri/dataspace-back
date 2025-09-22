@@ -1,4 +1,5 @@
 import { WorkspaceResponseDto } from '../../workspace/dto/workspace-response.dto';
+import { DataSourceResponseDto } from './data-source-response.dto';
 import { DataSourceType } from '../../entities/enums/data-source-type.enum';
 
 export class RepositoryResponseDto {
@@ -9,7 +10,7 @@ export class RepositoryResponseDto {
   type: DataSourceType;
   workspaceId: string;
   workspace?: WorkspaceResponseDto;
-  hasConnection: boolean;
+  dataSources?: DataSourceResponseDto[];
   createdAt: Date;
   updatedAt: Date;
 }
