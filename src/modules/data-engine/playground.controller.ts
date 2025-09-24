@@ -72,6 +72,46 @@ export class PlaygroundController {
   }
 
   /**
+   * Keep playground repository connection alive and check status
+   * Can be called periodically to maintain active connections
+   */
+  @Get('repositories/:repositoryId/ping')
+  @HttpCode(HttpStatus.OK)
+  async pingPlaygroundConnection(
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @CurrentUser() user: UserSession,
+  ): Promise<{
+    repositoryId: string;
+    status: 'healthy' | 'unhealthy' | 'disconnected';
+    type: string | null;
+    responseTime?: number;
+    connectedAt?: Date;
+    error?: string;
+    timestamp: Date;
+  }> {
+    // Get user's playground workspace
+    const playground =
+      await this.playgroundProvider.getPlaygroundWorkspaceForUser(user.userId);
+
+    // Use data engine provider to check connection status
+    const result = await this.dataEngineProvider.getConnectionStatus(
+      playground.id,
+      repositoryId,
+      user.userId,
+    );
+
+    return {
+      repositoryId,
+      status: result.status,
+      type: result.type,
+      responseTime: result.responseTime,
+      connectedAt: result.connectedAt,
+      error: result.error,
+      timestamp: new Date(),
+    };
+  }
+
+  /**
    * Connect to playground repository and stream schema discovery
    * Real-time connection + schema discovery via SSE
    */

@@ -293,6 +293,39 @@ export class DataEngineController {
   }
 
   /**
+   * Keep connection alive and check status
+   * Can be called periodically to maintain active connections
+   */
+  @Get('connection/ping')
+  @HttpCode(HttpStatus.OK)
+  @CheckAbility({ action: RepositoryPermission.READ, subject: 'Repository' })
+  async pingConnection(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
+    @Param('repositoryId', ParseUUIDPipe) repositoryId: string,
+    @CurrentUser() user: UserSession,
+  ): Promise<{
+    workspaceId: string;
+    repositoryId: string;
+    status: 'healthy' | 'unhealthy' | 'disconnected';
+    type: string | null;
+    responseTime?: number;
+    connectedAt?: Date;
+    error?: string;
+    timestamp: Date;
+  }> {
+    const result = await this.dataEngineProvider.getConnectionStatus(
+      workspaceId,
+      repositoryId,
+      user.userId,
+    );
+
+    return {
+      ...result,
+      timestamp: new Date(),
+    };
+  }
+
+  /**
    * Disconnect repository connection
    */
   @Delete('connection')

@@ -1730,6 +1730,28 @@
           "response": []
         },
         {
+          "name": "Ping Repository Connection",
+          "description": "Keep repository connection alive and check status - can be called periodically",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection/ping",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "connection",
+                "ping"
+              ]
+            },
+            "description": "Ping the database connection to keep it alive and check its health status. Returns connection status, response time, and timestamp. Perfect for periodic health checks and maintaining active connections."
+          },
+          "response": []
+        },
+        {
           "name": "Get Repository Connection Info",
           "description": "Get detailed connection information for a repository including credentials name and database type",
           "request": {
@@ -2017,6 +2039,21 @@
               ]
             },
             "description": "Stream real-time connection and schema discovery progress. Returns Server-Sent Events with steps: validating → connecting → connected → discovering_tables → tables_loaded → discovering_views → views_loaded → complete. Provides live feedback like DBeaver/DataGrip database explorers."
+          },
+          "response": []
+        },
+        {
+          "name": "Ping Playground Connection",
+          "description": "Keep playground connection alive and check status - can be called periodically",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/playground/repositories/{{repositoryId}}/ping",
+              "host": ["{{baseUrl}}"],
+              "path": ["playground", "repositories", "{{repositoryId}}", "ping"]
+            },
+            "description": "Ping the database connection to keep it alive and check its health status. Returns connection status, response time, and timestamp. Perfect for periodic health checks."
           },
           "response": []
         }
