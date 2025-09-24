@@ -24,7 +24,12 @@ export class RepositoryTransformer {
     }
 
     // Add connection information based on credentials availability
-    responseDto.hasConnection = repository.credentials && repository.credentials.length > 0;
+    responseDto.hasConnection =
+      repository.credentials && repository.credentials.length > 0;
+
+    // Add metadata information
+    responseDto.isPrivate = repository.isPrivate;
+    responseDto.isSaved = repository.isSaved;
 
     return responseDto;
   }

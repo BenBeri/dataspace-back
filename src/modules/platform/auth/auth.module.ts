@@ -12,7 +12,7 @@ import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
-    UsersModule,
+    forwardRef(() => UsersModule),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

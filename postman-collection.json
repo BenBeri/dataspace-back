@@ -1618,7 +1618,7 @@
     },
     {
       "name": "Data Engine",
-      "description": "Database query execution and connection testing endpoints. Execute queries using user-specific credentials automatically resolved through the multi-credential system. Each user connects with different database permissions based on their credential access priority: user-specific grants > group membership > default credentials. All operations use the CredentialsResolverService for seamless credential resolution.",
+      "description": "Database query execution and connection management endpoints. Includes 3 connection test methods: (1) Direct - test raw credentials without saving, (2) Encrypted - test encrypted credentials using workspace KMS, (3) Repository - test stored repository connections. Additional connection management: get connection status, get connection info, disconnect repository. Execute queries using user-specific credentials automatically resolved through the multi-credential system. Each user connects with different database permissions based on their credential access priority: user-specific grants > group membership > default credentials.",
       "item": [
         {
           "name": "Test Database Connection",
@@ -1633,7 +1633,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"postgres\",\n  \"config\": {\n    \"host\": \"localhost\",\n    \"port\": 5432,\n    \"username\": \"postgres\",\n    \"password\": \"password\",\n    \"database\": \"testdb\",\n    \"ssl\": false\n  },\n  \"timeoutMs\": 10000\n}"
+              "raw": "{\n  \"type\": \"postgres\",\n  \"config\": {\n    \"host\": \"localhost\",\n    \"port\": 5432,\n    \"username\": \"dataspace_user\",\n    \"password\": \"dataspace_password123\",\n    \"database\": \"dataspace_db\",\n    \"ssl\": true\n  },\n  \"timeoutMs\": 10000\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/data-engine/test-connection",
@@ -1641,6 +1641,35 @@
               "path": ["data-engine", "test-connection"]
             },
             "description": "Test database connection using provided credentials without requiring workspace or repository context."
+          },
+          "response": []
+        },
+        {
+          "name": "Test Encrypted Connection",
+          "description": "Test database connection using encrypted credentials from request body - requires workspace context for KMS key access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"postgres\",\n  \"encryptedConfig\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"timeoutMs\": 10000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/data-engine/test-connection/encrypted/{{workspaceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "data-engine",
+                "test-connection",
+                "encrypted",
+                "{{workspaceId}}"
+              ]
+            },
+            "description": "Test database connection using encrypted credentials from request body. Decrypts credentials using workspace KMS key and tests connection. Useful for testing credentials stored in client-side encrypted storage."
           },
           "response": []
         },
@@ -1671,6 +1700,58 @@
               ]
             },
             "description": "Test database connection using the repository's credentials resolved for the current user. Uses the multi-credential system to automatically select the appropriate credentials based on user access priority."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Repository Connection Status",
+          "description": "Get connection status for a repository - shows if connection is active and healthy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "status"
+              ]
+            },
+            "description": "Get the current connection status for a repository. Shows if the database connection is active, healthy, and when it was last connected."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Repository Connection Info",
+          "description": "Get detailed connection information for a repository including credentials name and database type",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/repositories/{{repositoryId}}/connection-info",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workspaces",
+                "{{workspaceId}}",
+                "repositories",
+                "{{repositoryId}}",
+                "connection-info"
+              ]
+            },
+            "description": "Get detailed information about the repository's database connection including the credentials name being used, database type, status, and connection timestamp."
           },
           "response": []
         },
@@ -1848,6 +1929,94 @@
               ]
             },
             "description": "Get list of all supported database types with detailed configuration information including required/optional fields, defaults, and descriptions"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Playground",
+      "description": "Playground workspace endpoints for database exploration and experimentation. Automatically creates personal playground workspace on user registration with simplified repository management and real-time schema discovery via Server-Sent Events (SSE).",
+      "item": [
+        {
+          "name": "Create Playground Repository",
+          "description": "Create a new repository in the user's playground workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Database Connection\",\n  \"description\": \"Connection to my PostgreSQL database\",\n  \"type\": \"postgres\",\n  \"credentials\": {\n    \"name\": \"default-connection\",\n    \"description\": \"Default connection credentials\",\n    \"config\": {\n      \"host\": \"localhost\",\n      \"port\": 5432,\n      \"username\": \"dataspace_user\",\n      \"password\": \"dataspace_password123\",\n      \"database\": \"dataspace_db\",\n      \"ssl\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/playground/repositories",
+              "host": ["{{baseUrl}}"],
+              "path": ["playground", "repositories"]
+            },
+            "description": "Create a repository with credentials in the user's personal playground workspace. Repositories are automatically set as private. If credentials are provided, they will be encrypted and saved, and the repository will be marked as saved."
+          },
+          "response": []
+        },
+        {
+          "name": "Save Playground Credentials",
+          "description": "Save encrypted credentials for an existing playground repository that was created without credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"default-connection\",\n  \"description\": \"Default connection credentials\",\n  \"config\": {\n    \"host\": \"localhost\",\n    \"port\": 5432,\n    \"username\": \"dataspace_user\",\n    \"password\": \"dataspace_password123\",\n    \"database\": \"dataspace_db\",\n    \"ssl\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/playground/repositories/{{repositoryId}}/credentials",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "playground",
+                "repositories",
+                "{{repositoryId}}",
+                "credentials"
+              ]
+            },
+            "description": "Save encrypted database credentials for a playground repository. Credentials are encrypted using the playground workspace KMS key."
+          },
+          "response": []
+        },
+        {
+          "name": "Connect & Discover Schema (SSE)",
+          "description": "Real-time connection and schema discovery via Server-Sent Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              },
+              {
+                "key": "Cache-Control",
+                "value": "no-cache"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/playground/repositories/{{repositoryId}}/connect",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "playground",
+                "repositories",
+                "{{repositoryId}}",
+                "connect"
+              ]
+            },
+            "description": "Stream real-time connection and schema discovery progress. Returns Server-Sent Events with steps: validating → connecting → connected → discovering_tables → tables_loaded → discovering_views → views_loaded → complete. Provides live feedback like DBeaver/DataGrip database explorers."
           },
           "response": []
         }

@@ -8,6 +8,7 @@ import { RepositoryService } from '../services/repository.service';
 import { RepositoryConnectionHistoryService } from '../services/repository-connection-history.service';
 import { RepositoryCredentialsService } from '../services/repository-credentials.service';
 import { CredentialsAccessService } from '../services/credentials-access.service';
+import { RepositoryMetadataRepository } from '../repositories/repository-metadata.repository';
 import { WorkspaceService } from '../../workspace/services/workspace.service';
 import { Repository } from '../../entities/repository/repository.entity';
 import { RepositoryConnectionHistory } from '../../entities/repository/repository-connection-history.entity';
@@ -16,6 +17,7 @@ import { CredentialsAccess } from '../../entities/repository/credentials-access.
 import { AccessIdentityType } from '../../entities/enums/access-identity-type.enum';
 import { CreateRepositoryRequestDto } from '../dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from '../dto/update-repository-request.dto';
+import { RepositoryMetadata } from '../../entities/repository/repository-metadata.entity';
 import type { IKeyManagementService } from '../../key-management/interfaces/key-management.interface';
 import { KEY_MANAGEMENT_SERVICE } from '../../key-management/key-management.module';
 
@@ -26,6 +28,7 @@ export class RepositoryFacade {
     private readonly connectionHistoryService: RepositoryConnectionHistoryService,
     private readonly repositoryCredentialsService: RepositoryCredentialsService,
     private readonly credentialsAccessService: CredentialsAccessService,
+    private readonly repositoryMetadataRepository: RepositoryMetadataRepository,
     private readonly workspaceService: WorkspaceService,
     @Inject(KEY_MANAGEMENT_SERVICE)
     private readonly keyManagementService: IKeyManagementService,
@@ -317,6 +320,17 @@ export class RepositoryFacade {
       repositoryId,
       userId,
       userGroupIds,
+    );
+  }
+
+  // Repository Metadata Management
+  async updateRepositoryMetadata(
+    repositoryId: string,
+    updates: Partial<Pick<RepositoryMetadata, 'isPrivate' | 'isSaved'>>,
+  ): Promise<void> {
+    await this.repositoryMetadataRepository.updateByRepositoryId(
+      repositoryId,
+      updates,
     );
   }
 }

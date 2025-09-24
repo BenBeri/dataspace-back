@@ -4,6 +4,7 @@ import { Repository } from '../entities/repository/repository.entity';
 import { RepositoryConnectionHistory } from '../entities/repository/repository-connection-history.entity';
 import { RepositoryCredentials } from '../entities/repository/repository-credentials.entity';
 import { CredentialsAccess } from '../entities/repository/credentials-access.entity';
+import { RepositoryMetadata } from '../entities/repository/repository-metadata.entity';
 import { RepositoryController } from './repository.controller';
 import { RepositoryProvider } from './providers/repository.provider';
 import { RepositoryService } from './services/repository.service';
@@ -15,6 +16,7 @@ import { RepositoryRepository } from './repositories/repository.repository';
 import { RepositoryConnectionHistoryRepository } from './repositories/repository-connection-history.repository';
 import { RepositoryCredentialsRepository } from './repositories/repository-credentials.repository';
 import { CredentialsAccessRepository } from './repositories/credentials-access.repository';
+import { RepositoryMetadataRepository } from './repositories/repository-metadata.repository';
 import { RepositoryFacade } from './facades/repository.facade';
 import { RepositoryGuard } from './guards/repository.guard';
 import { CaslRepositoryGuard } from './guards/casl-repository.guard';
@@ -29,6 +31,7 @@ import { KeyManagementModule } from '../key-management/key-management.module';
       RepositoryConnectionHistory,
       RepositoryCredentials,
       CredentialsAccess,
+      RepositoryMetadata,
     ]),
     forwardRef(() => WorkspaceModule),
     forwardRef(() => AuthModule),
@@ -51,6 +54,7 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     RepositoryConnectionHistoryRepository,
     RepositoryCredentialsRepository,
     CredentialsAccessRepository,
+    RepositoryMetadataRepository,
 
     // Facades
     RepositoryFacade,
@@ -60,11 +64,13 @@ import { KeyManagementModule } from '../key-management/key-management.module';
     CaslRepositoryGuard,
   ],
   exports: [
+    RepositoryProvider,
     RepositoryService,
     RepositoryRepository,
     RepositoryFacade,
     RepositoryConnectionHistoryService,
     RepositoryConnectionHistoryRepository,
+    RepositoryMetadataRepository,
     CredentialsResolverService,
     RepositoryGuard,
     CaslRepositoryGuard,

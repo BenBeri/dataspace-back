@@ -562,9 +562,10 @@ export class DataEngineProvider {
       }
 
       // Decrypt the credentials to get the actual connection config
-      const decryptedConfig = await this.repositoryFacade.decryptCredentialsConfiguration(
-        credentialsResult.credentials.encryptedCredentials,
-      );
+      const decryptedConfig =
+        await this.repositoryFacade.decryptCredentialsConfiguration(
+          credentialsResult.credentials.encryptedCredentials,
+        );
 
       // Test connection using decrypted configuration
       const result = await this.queryExecutionService.testConnectionDirect(
@@ -650,6 +651,42 @@ export class DataEngineProvider {
       );
 
       throw new BadRequestException(`Connection test failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get database connection for schema discovery
+   * Provider orchestration: Coordinates between services to get connection
+   * Public method for playground/schema discovery use cases
+   */
+  async getConnectionForSchemaDiscovery(
+    workspaceId: string,
+    repositoryId: string,
+    userId: string,
+  ): Promise<{ connection: any; repositoryType: DataSourceType }> {
+    try {
+      // Use the existing private getConnection method
+      const connection = await this.getConnection(
+        workspaceId,
+        repositoryId,
+        userId,
+      );
+
+      // Get repository to determine type
+      const repository =
+        await this.repositoryService.getRepositoryById(repositoryId);
+
+      return {
+        connection: connection.getNativeClient(),
+        repositoryType: repository.type,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get connection for schema discovery: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Schema discovery connection failed: ${error.message}`,
+      );
     }
   }
 

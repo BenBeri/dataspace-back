@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   JoinColumn,
   Unique,
 } from 'typeorm';
@@ -14,6 +15,7 @@ import { DataSourceType } from '../enums/data-source-type.enum';
 import { KeyNameEntity } from '../base/key-name.entity';
 import { RepositoryConnectionHistory } from './repository-connection-history.entity';
 import { RepositoryCredentials } from './repository-credentials.entity';
+import { RepositoryMetadata } from './repository-metadata.entity';
 
 @Entity('repositories')
 @Unique(['workspaceId', 'nameKey'])
@@ -36,9 +38,6 @@ export class Repository extends KeyNameEntity {
   @Column()
   workspaceId: string;
 
-  @Column({ default: false })
-  isPrivate: boolean;
-
   @ManyToOne(() => Workspace, (workspace) => workspace.repositories)
   @JoinColumn({ name: 'workspaceId' })
   workspace: Workspace;
@@ -54,6 +53,20 @@ export class Repository extends KeyNameEntity {
     (credentials) => credentials.repository,
   )
   credentials: RepositoryCredentials[];
+
+  @OneToOne(() => RepositoryMetadata, (metadata) => metadata.repository, {
+    cascade: true,
+  })
+  metadata: RepositoryMetadata;
+
+  // Virtual getters for CASL compatibility
+  get isPrivate(): boolean {
+    return this.metadata?.isPrivate || false;
+  }
+
+  get isSaved(): boolean {
+    return this.metadata?.isSaved || false;
+  }
 
   @CreateDateColumn()
   createdAt: Date;

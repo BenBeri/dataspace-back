@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Repository } from '../../entities/repository/repository.entity';
 import { RepositoryRepository } from '../repositories/repository.repository';
+import { RepositoryMetadataRepository } from '../repositories/repository-metadata.repository';
 import { RepositoryTransformer } from '../transformers/repository.transformer';
 import { CreateRepositoryRequestDto } from '../dto/create-repository-request.dto';
 import { UpdateRepositoryRequestDto } from '../dto/update-repository-request.dto';
@@ -16,7 +17,10 @@ import { EntityKeyNameHelper } from '../../shared/helpers/entity-key-name.helper
 export class RepositoryService {
   private readonly logger = new Logger(RepositoryService.name);
 
-  constructor(private readonly repositoryRepository: RepositoryRepository) {}
+  constructor(
+    private readonly repositoryRepository: RepositoryRepository,
+    private readonly repositoryMetadataRepository: RepositoryMetadataRepository,
+  ) {}
 
   async createRepository(
     createRepositoryDto: CreateRepositoryRequestDto,
@@ -38,6 +42,13 @@ export class RepositoryService {
 
     const repository =
       await this.repositoryRepository.createFromData(repositoryData);
+
+    // Create metadata for the repository
+    await this.repositoryMetadataRepository.create(
+      repository.id,
+      createRepositoryDto.isPrivate || false,
+      false, // isSaved defaults to false for new repositories
+    );
 
     this.logger.log(
       `Successfully created repository ${repository.id} with key ${uniqueRepositoryKey}`,

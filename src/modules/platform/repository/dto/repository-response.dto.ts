@@ -10,6 +10,8 @@ export class RepositoryResponseDto {
   workspaceId: string;
   workspace?: WorkspaceResponseDto;
   hasConnection: boolean;
+  isPrivate: boolean;
+  isSaved: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

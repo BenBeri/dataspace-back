@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
@@ -9,9 +9,13 @@ import { PasswordHashService } from './services/password-hash.service';
 import { PasswordHashHelper } from './helpers/password-hash.helper';
 import { User } from '../entities/user/user.entity';
 import { PasswordHash } from '../entities/user/password-hash.entity';
+import { WorkspaceModule } from '../workspace/workspace.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, PasswordHash])],
+  imports: [
+    TypeOrmModule.forFeature([User, PasswordHash]),
+    forwardRef(() => WorkspaceModule),
+  ],
   providers: [
     UsersService,
     UserProvider,

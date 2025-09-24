@@ -105,6 +105,63 @@ export class WorkspaceProvider {
     );
   }
 
+  /**
+   * Creates a playground workspace for a user (simplified, without full groups setup)
+   * Used during user registration to auto-create personal workspace
+   */
+  @Transactional({ isolation: 'READ COMMITTED' })
+  async createPlaygroundWorkspace(
+    createWorkspaceDto: CreateWorkspaceRequestDto,
+    ownerUserId: string,
+  ): Promise<WorkspaceResponseDto> {
+    // 1. Create the playground workspace
+    const workspace = await this.workspaceService.createPlaygroundWorkspace(
+      createWorkspaceDto,
+      ownerUserId,
+    );
+
+    // 2. Create encryption key for the workspace
+    try {
+      const keyId = await this.keyManagementService.createKey(workspace.id, {
+        WorkspaceName: workspace.name,
+        OwnerUserId: ownerUserId,
+        WorkspaceType: 'playground',
+      });
+
+      // Update workspace with key ID
+      await this.workspaceService.updateWorkspaceKmsKey(workspace.id, keyId);
+      workspace.kmsKeyId = keyId;
+
+      this.logger.log(
+        `Successfully created playground workspace ${workspace.id} with encryption key ${keyId}`,
+      );
+    } catch (keyError) {
+      this.logger.error(
+        `Failed to create encryption key for playground workspace ${workspace.id}: ${keyError.message}`,
+      );
+      throw new Error(
+        `Failed to create playground workspace encryption key: ${keyError.message}`,
+      );
+    }
+
+    // 3. Create default groups (simplified for playground)
+    try {
+      await this.groupService.createDefaultGroups(workspace.id);
+      this.logger.log(
+        `Created default groups for playground workspace ${workspace.id}`,
+      );
+    } catch (groupError) {
+      this.logger.error(
+        `Failed to create groups for playground workspace ${workspace.id}: ${groupError.message}`,
+      );
+      throw new Error(
+        `Failed to create playground workspace groups: ${groupError.message}`,
+      );
+    }
+
+    return WorkspaceTransformer.toResponseDto(workspace);
+  }
+
   async getWorkspaceById(id: string): Promise<WorkspaceResponseDto> {
     const workspace = await this.workspaceService.getWorkspaceById(id);
     return await this.enrichWithLogoUrl(

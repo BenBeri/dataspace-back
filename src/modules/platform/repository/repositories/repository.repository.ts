@@ -33,13 +33,14 @@ export class RepositoryRepository {
   async findById(id: string): Promise<Repository | null> {
     return await this.repository.findOne({
       where: { id },
-      relations: ['workspace', 'connectionHistory'],
+      relations: ['workspace', 'connectionHistory', 'metadata'],
     });
   }
 
   async findByWorkspaceId(workspaceId: string): Promise<Repository[]> {
     return await this.repository.find({
       where: { workspaceId },
+      relations: ['metadata'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -51,6 +52,7 @@ export class RepositoryRepository {
   ): Promise<[Repository[], number]> {
     return await this.repository.findAndCount({
       where: { workspaceId },
+      relations: ['metadata'],
       skip,
       take,
       order: { createdAt: 'DESC' },
@@ -66,7 +68,8 @@ export class RepositoryRepository {
     const queryBuilder = this.repository
       .createQueryBuilder('repository')
       .leftJoinAndSelect('repository.workspace', 'workspace')
-      .leftJoinAndSelect('repository.connectionHistory', 'connectionHistory');
+      .leftJoinAndSelect('repository.connectionHistory', 'connectionHistory')
+      .leftJoinAndSelect('repository.metadata', 'metadata');
 
     queryBuilder.where('repository.workspaceId = :workspaceId', {
       workspaceId,

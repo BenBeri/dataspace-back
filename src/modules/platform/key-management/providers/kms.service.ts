@@ -27,7 +27,9 @@ export class KmsService implements IKeyManagementService {
   private initializeAwsClient(): void {
     const region = this.configService.get<string>('AWS_REGION');
     const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
+    const secretAccessKey = this.configService.get<string>(
+      'AWS_SECRET_ACCESS_KEY',
+    );
 
     // Validate required AWS credentials
     if (!region || !accessKeyId || !secretAccessKey) {
@@ -35,7 +37,7 @@ export class KmsService implements IKeyManagementService {
       if (!region) missingVars.push('AWS_REGION');
       if (!accessKeyId) missingVars.push('AWS_ACCESS_KEY_ID');
       if (!secretAccessKey) missingVars.push('AWS_SECRET_ACCESS_KEY');
-      
+
       const errorMessage = `Missing required AWS environment variables: ${missingVars.join(', ')}`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
@@ -59,9 +61,13 @@ export class KmsService implements IKeyManagementService {
    * @param metadata - Optional metadata (merged with workspace-specific tags)
    * @returns The Key ID of the created KMS key
    */
-  async createKey(keyIdentifier: string, metadata?: Record<string, string>): Promise<string> {
+  async createKey(
+    keyIdentifier: string,
+    metadata?: Record<string, string>,
+  ): Promise<string> {
     try {
-      const environment = this.configService.get<string>('NODE_ENV') || 'development';
+      const environment =
+        this.configService.get<string>('NODE_ENV') || 'development';
       const aliasName = `alias/dataspace/${environment}/workspace/${keyIdentifier}`;
 
       // Merge provided metadata with workspace-specific tags
@@ -80,11 +86,13 @@ export class KmsService implements IKeyManagementService {
         },
       ];
 
-      // Add custom metadata as tags
-      const customTags = metadata ? Object.entries(metadata).map(([key, value]) => ({
-        TagKey: key,
-        TagValue: value,
-      })) : [];
+      // Add custom metadata as tags (with sanitization)
+      const customTags = metadata
+        ? Object.entries(metadata).map(([key, value]) => ({
+            TagKey: this.sanitizeTagKey(key),
+            TagValue: this.sanitizeTagValue(value),
+          }))
+        : [];
 
       // Create the key
       const createKeyInput: CreateKeyCommandInput = {
@@ -113,14 +121,20 @@ export class KmsService implements IKeyManagementService {
         await this.kmsClient.send(createAliasCommand);
         this.logger.log(`Created KMS alias ${aliasName} for key ${keyId}`);
       } catch (error) {
-        this.logger.warn(`Failed to create alias for key ${keyId}: ${error.message}`);
+        this.logger.warn(
+          `Failed to create alias for key ${keyId}: ${error.message}`,
+        );
         // Continue even if alias creation fails
       }
 
-      this.logger.log(`Successfully created KMS key ${keyId} for workspace ${keyIdentifier}`);
+      this.logger.log(
+        `Successfully created KMS key ${keyId} for workspace ${keyIdentifier}`,
+      );
       return keyId;
     } catch (error) {
-      this.logger.error(`Failed to create KMS key for workspace ${keyIdentifier}: ${error.message}`);
+      this.logger.error(
+        `Failed to create KMS key for workspace ${keyIdentifier}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -145,7 +159,9 @@ export class KmsService implements IKeyManagementService {
       }
 
       // Convert the encrypted blob to base64 string for storage
-      const encryptedData = Buffer.from(encryptResponse.CiphertextBlob).toString('base64');
+      const encryptedData = Buffer.from(
+        encryptResponse.CiphertextBlob,
+      ).toString('base64');
       return encryptedData;
     } catch (error) {
       this.logger.error(`Failed to encrypt data: ${error.message}`);
@@ -170,7 +186,9 @@ export class KmsService implements IKeyManagementService {
         throw new Error('Failed to decrypt data: No plaintext returned');
       }
 
-      const plaintext = Buffer.from(decryptResponse.Plaintext).toString('utf-8');
+      const plaintext = Buffer.from(decryptResponse.Plaintext).toString(
+        'utf-8',
+      );
       return plaintext;
     } catch (error) {
       this.logger.error(`Failed to decrypt data: ${error.message}`);
@@ -195,5 +213,32 @@ export class KmsService implements IKeyManagementService {
       this.logger.error(`Failed to check key availability: ${error.message}`);
       return false;
     }
+  }
+
+  /**
+   * Sanitizes AWS KMS tag keys to ensure they meet AWS requirements
+   * AWS KMS tag keys: 1-128 characters, alphanumeric and +-=._:/@ allowed
+   */
+  private sanitizeTagKey(key: string): string {
+    // Replace invalid characters with underscores and ensure length limits
+    const sanitized = key
+      .replace(/[^a-zA-Z0-9+\-=._:/@]/g, '_') // Replace invalid chars with underscore
+      .substring(0, 128); // AWS KMS tag key max length is 128
+
+    // Ensure we don't return empty string
+    return sanitized || 'DefaultKey';
+  }
+
+  /**
+   * Sanitizes AWS KMS tag values to ensure they meet AWS requirements
+   * AWS KMS tag values: 0-256 characters, alphanumeric and +-=._:/@ allowed
+   */
+  private sanitizeTagValue(value: string): string {
+    // Replace invalid characters with underscores and ensure length limits
+    const sanitized = value
+      .replace(/[^a-zA-Z0-9+\-=._:/@\s]/g, '_') // Replace invalid chars (allow spaces)
+      .substring(0, 256); // AWS KMS tag value max length is 256
+
+    return sanitized || 'DefaultValue';
   }
 }
