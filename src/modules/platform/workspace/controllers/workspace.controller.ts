@@ -70,6 +70,15 @@ export class WorkspaceController {
     );
   }
 
+  @Get('my-playground-workspace')
+  async getCurrentUserPlaygroundWorkspace(
+    @CurrentUser() userSession: UserSession,
+  ): Promise<MyWorkspaceResponseDto | null> {
+    return await this.workspaceProvider.getCurrentUserPlaygroundWorkspace(
+      userSession.userId,
+    );
+  }
+
   @Get(':id')
   async getWorkspaceById(
     @Param('id', ParseUUIDPipe) id: string,

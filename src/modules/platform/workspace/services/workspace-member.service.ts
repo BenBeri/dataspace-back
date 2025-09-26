@@ -7,6 +7,7 @@ import {
 import { WorkspaceMember } from '../../entities/workspace/workspace-member.entity';
 import { WorkspaceMemberRepository } from '../repositories/workspace-member.repository';
 import { TransactionManagerService } from '../../shared/services/transaction-manager.service';
+import { WorkspaceType } from '../../entities/enums/workspace-type.enum';
 import type { PartialWorkspacePermissions } from '../../auth/interfaces/workspace-permissions.interface';
 
 @Injectable()
@@ -97,6 +98,28 @@ export class WorkspaceMemberService {
     const repository = this.transactionManager.getRepository(WorkspaceMember);
     return await repository.find({
       where: { userId },
+      relations: ['workspace', 'group'],
+    });
+  }
+
+  async getUserRegularWorkspaces(userId: string): Promise<WorkspaceMember[]> {
+    const repository = this.transactionManager.getRepository(WorkspaceMember);
+    return await repository.find({
+      where: { 
+        userId,
+        workspace: { workspaceType: WorkspaceType.REGULAR }
+      },
+      relations: ['workspace', 'group'],
+    });
+  }
+
+  async getUserPlaygroundWorkspace(userId: string): Promise<WorkspaceMember | null> {
+    const repository = this.transactionManager.getRepository(WorkspaceMember);
+    return await repository.findOne({
+      where: { 
+        userId,
+        workspace: { workspaceType: WorkspaceType.PLAYGROUND }
+      },
       relations: ['workspace', 'group'],
     });
   }

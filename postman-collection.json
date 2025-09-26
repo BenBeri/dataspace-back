@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Dataspace API",
-    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, and Repositories management. Features CASL-based permission system with workspace owner privileges, group-based permissions, and user-specific permission overrides. Includes advanced multi-credential system allowing different users/groups to have different database credentials with varying permission levels for the same repository. Data Engine operations automatically resolve user-specific credentials based on priority: user-specific > group-based > default access.",
+    "description": "Complete API collection for Dataspace Platform with Authentication, Users, Workspaces, and Repositories management. Features CASL-based permission system with workspace owner privileges, group-based permissions, and user-specific permission overrides. Includes advanced multi-credential system allowing different users/groups to have different database credentials with varying permission levels for the same repository. Data Engine operations automatically resolve user-specific credentials based on priority: user-specific > group-based > default access. Supports both regular collaborative workspaces and personal playground workspaces for experimentation.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "dataspace-api-collection",
     "version": "7.0.0"
@@ -545,7 +545,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["workspaces", "my-workspaces"]
             },
-            "description": "Gets simplified workspace information for the current authenticated user. Returns: workspaceId, nameKey, ownerUserId, group (name and permissions), createdAt, updatedAt."
+            "description": "Gets simplified workspace information for the current authenticated user (REGULAR workspaces only). Returns: workspaceId, nameKey, ownerUserId, group (name and permissions), createdAt, updatedAt."
           },
           "response": [
             {
@@ -565,6 +565,57 @@
               "header": [],
               "cookie": [],
               "body": "[\n  {\n    \"workspaceId\": \"uuid\",\n    \"nameKey\": \"my-workspace\",\n    \"ownerUserId\": \"uuid\",\n    \"group\": {\n      \"name\": \"admin\",\n      \"permissions\": {\n        \"read\": true,\n        \"write\": true,\n        \"delete\": true,\n        \"membersManagement\": {\n          \"read\": true,\n          \"write\": true,\n          \"delete\": true\n        },\n        \"repository\": {\n          \"public\": {\n            \"read\": true,\n            \"write\": true,\n            \"delete\": true\n          },\n          \"private\": {}\n        }\n      }\n    },\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User Playground Workspace",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workspaces/my-playground-workspace",
+              "host": ["{{baseUrl}}"],
+              "path": ["workspaces", "my-playground-workspace"]
+            },
+            "description": "Gets the current user's playground workspace. Returns a single workspace object (not an array) or null if no playground workspace exists. Playground workspaces are personal workspaces for experimentation."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/my-playground-workspace",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["workspaces", "my-playground-workspace"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"workspaceId\": \"uuid\",\n  \"nameKey\": \"my-playground\",\n  \"ownerUserId\": \"uuid\",\n  \"group\": {\n    \"name\": \"Owner\",\n    \"permissions\": {}\n  },\n  \"createdAt\": \"2024-01-01T00:00:00Z\",\n  \"updatedAt\": \"2024-01-01T00:00:00Z\",\n  \"logoUrl\": null\n}"
+            },
+            {
+              "name": "No Playground Workspace",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/workspaces/my-playground-workspace",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["workspaces", "my-playground-workspace"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "null"
             }
           ]
         }

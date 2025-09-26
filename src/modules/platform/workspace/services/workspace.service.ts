@@ -150,10 +150,31 @@ export class WorkspaceService {
     await repository.delete(id);
   }
 
-  async getWorkspacesByOwner(ownerUserId: string): Promise<Workspace[]> {
+  async getWorkspacesByOwner(ownerUserId: string, workspaceType?: WorkspaceType): Promise<Workspace[]> {
     const repository = this.transactionManager.getRepository(Workspace);
+    const where: any = { ownerUserId };
+    
+    if (workspaceType) {
+      where.workspaceType = workspaceType;
+    }
+    
     return await repository.find({
-      where: { ownerUserId },
+      where,
+      relations: ['repositories'],
+    });
+  }
+
+  async getRegularWorkspacesByOwner(ownerUserId: string): Promise<Workspace[]> {
+    return this.getWorkspacesByOwner(ownerUserId, WorkspaceType.REGULAR);
+  }
+
+  async getPlaygroundWorkspaceByOwner(ownerUserId: string): Promise<Workspace | null> {
+    const repository = this.transactionManager.getRepository(Workspace);
+    return await repository.findOne({
+      where: { 
+        ownerUserId,
+        workspaceType: WorkspaceType.PLAYGROUND
+      },
       relations: ['repositories'],
     });
   }

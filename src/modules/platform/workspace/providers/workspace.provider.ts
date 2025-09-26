@@ -249,10 +249,10 @@ export class WorkspaceProvider {
   async getCurrentUserWorkspaces(
     userId: string,
   ): Promise<MyWorkspaceResponseDto[]> {
-    // Get both workspaces where user is owner AND where user is a member
+    // Get both workspaces where user is owner AND where user is a member - only REGULAR workspaces
     const [ownedWorkspaces, memberWorkspaces] = await Promise.all([
-      this.workspaceService.getWorkspacesByOwner(userId),
-      this.workspaceMemberService.getUserWorkspaces(userId),
+      this.workspaceService.getRegularWorkspacesByOwner(userId),
+      this.workspaceMemberService.getUserRegularWorkspaces(userId),
     ]);
 
     // Convert owned workspaces to MyWorkspaceResponseDto format
@@ -304,6 +304,51 @@ export class WorkspaceProvider {
     });
 
     return allWorkspaces;
+  }
+
+  async getCurrentUserPlaygroundWorkspace(
+    userId: string,
+  ): Promise<MyWorkspaceResponseDto | null> {
+    // Get the user's playground workspace - first check if they own one
+    const ownedPlaygroundWorkspace = await this.workspaceService.getPlaygroundWorkspaceByOwner(userId);
+    
+    if (ownedPlaygroundWorkspace) {
+      const logoUrl = await this.workspaceMediaFacade.getWorkspaceLogoUrl(
+        ownedPlaygroundWorkspace.id,
+      );
+      return {
+        workspaceId: ownedPlaygroundWorkspace.id,
+        nameKey: ownedPlaygroundWorkspace.nameKey,
+        ownerUserId: ownedPlaygroundWorkspace.ownerUserId,
+        group: {
+          name: 'Owner',
+          permissions: {}, // Owner has all permissions by default
+        },
+        createdAt: ownedPlaygroundWorkspace.createdAt,
+        updatedAt: ownedPlaygroundWorkspace.updatedAt,
+        logoUrl,
+      };
+    }
+
+    // If not an owner, check if they are a member of a playground workspace
+    const memberPlaygroundWorkspace = await this.workspaceMemberService.getUserPlaygroundWorkspace(userId);
+    
+    if (memberPlaygroundWorkspace) {
+      const memberWorkspaceResponsesWithoutLogo =
+        WorkspaceMemberTransformer.toMyWorkspaceResponseDtoArray([memberPlaygroundWorkspace]);
+      
+      if (memberWorkspaceResponsesWithoutLogo.length > 0) {
+        const logoUrl = await this.workspaceMediaFacade.getWorkspaceLogoUrl(
+          memberWorkspaceResponsesWithoutLogo[0].workspaceId,
+        );
+        return {
+          ...memberWorkspaceResponsesWithoutLogo[0],
+          logoUrl,
+        };
+      }
+    }
+
+    return null;
   }
 
   async getCurrentUserWorkspacesDetailed(
